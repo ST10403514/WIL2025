@@ -212,14 +212,18 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         sendText.addTextChangedListener(hexWatcher);
         sendText.setHint(hexEnabled ? "HEX mode" : "");
 
+        // Show buttons
         showView.setOnClickListener(v -> {
-            buttonsView.setVisibility(View.VISIBLE);
+            buttonsView.setVisibility(View.VISIBLE);  // Show the buttons
+            showView.setVisibility(View.GONE);       // Hide the "Show" button itself
         });
 
-        // Hide buttons when hideView is clicked
+// Hide buttons
         hideView.setOnClickListener(v -> {
-            buttonsView.setVisibility(View.GONE);
+            buttonsView.setVisibility(View.GONE);    // Hide the buttons
+            showView.setVisibility(View.VISIBLE);    // Make the "Show" button visible again
         });
+
 
         btnJumpLeft.setOnClickListener(v -> {
             sendText.setText("1"); // Set sendText to "1"

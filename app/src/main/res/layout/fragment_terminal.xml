@@ -42,18 +42,15 @@
     </RelativeLayout>
 
     <!-- Image Area -->
-
-    <!-- Jump Counters below image -->
     <FrameLayout
         android:id="@+id/imageArea"
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:layout_weight="1"
         android:layout_marginTop="24dp"
         android:layout_marginBottom="16dp"
-        android:layout_weight="1"
         android:background="@drawable/image_placeholder_background">
 
-        <!-- Jump Image placeholder -->
         <ImageView
             android:id="@+id/ivJump"
             android:layout_width="200dp"
@@ -61,6 +58,7 @@
             android:layout_gravity="center" />
     </FrameLayout>
 
+    <!-- Jump Counters -->
     <LinearLayout
         android:id="@+id/jumpStatsLayout"
         android:layout_width="match_parent"
@@ -70,7 +68,6 @@
         android:weightSum="3"
         android:layout_marginBottom="12dp">
 
-        <!-- Left Counter -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="80dp"
@@ -80,6 +77,14 @@
             android:orientation="vertical"
             android:gravity="center"
             android:padding="8dp">
+            <TextView
+                android:id="@+id/tvJumpLeft"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:textSize="18sp"/>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -87,16 +92,8 @@
                 android:textColor="#FFFFFF"
                 android:textStyle="bold"
                 android:textSize="14sp"/>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0"
-                android:textColor="#FFFFFF"
-                android:textStyle="bold"
-                android:textSize="18sp"/>
         </LinearLayout>
 
-        <!-- Up Counter -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="80dp"
@@ -107,22 +104,22 @@
             android:gravity="center"
             android:padding="8dp">
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Jumps Up"
-                android:textColor="#FFFFFF"
-                android:textStyle="bold"
-                android:textSize="14sp"/>
-            <TextView
+                android:id="@+id/tvJumpMiddle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0"
                 android:textColor="#FFFFFF"
                 android:textStyle="bold"
                 android:textSize="18sp"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Jumps Up"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:textSize="14sp"/>
         </LinearLayout>
 
-        <!-- Right Counter -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="80dp"
@@ -132,77 +129,149 @@
             android:gravity="center"
             android:padding="8dp">
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Jumps Right"
-                android:textColor="#FFFFFF"
-                android:textStyle="bold"
-                android:textSize="14sp"/>
-            <TextView
+                android:id="@+id/tvJumpRight"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0"
                 android:textColor="#FFFFFF"
                 android:textStyle="bold"
                 android:textSize="18sp"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Jumps Right"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:textSize="14sp"/>
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Jump Buttons below counters -->
+    <Button
+        android:id="@+id/showView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Show"/>
+    <!-- Buttons View (to show/hide all main buttons) -->
     <LinearLayout
+        android:id="@+id/buttonsView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:layout_marginBottom="16dp">
+        android:orientation="vertical">
 
-        <Button
-            android:id="@+id/btnJumpLeft"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
-            android:text="Jump Left"
-            android:textColor="#FFFFFF"
-            android:background="@drawable/jump_stat_background"
-            android:layout_marginEnd="8dp"/>
-
-        <Button
-            android:id="@+id/btnJumpUp"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
-            android:text="Jump Up"
-            android:textColor="#FFFFFF"
-            android:background="@drawable/jump_stat_background"
-            android:layout_marginEnd="8dp"/>
-
-        <Button
-            android:id="@+id/btnJumpRight"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
-            android:text="Jump Right"
-            android:textColor="#FFFFFF"
-            android:background="@drawable/jump_stat_background"/>
-    </LinearLayout>
-
-    <!-- Show / Hide Buttons -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:layout_marginBottom="8dp">
-
-        <Button
-            android:id="@+id/showView"
-            android:layout_width="wrap_content"
+        <!-- Jump Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Show"/>
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginBottom="16dp">
 
-        <Button
-            android:id="@+id/hideView"
-            android:layout_width="wrap_content"
+            <Button
+                android:id="@+id/btnJumpLeft"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:text="Jump Left"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/jump_stat_background"
+                android:layout_marginEnd="8dp"/>
+
+            <Button
+                android:id="@+id/btnJumpUp"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:text="Jump Up"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/jump_stat_background"
+                android:layout_marginEnd="8dp"/>
+
+            <Button
+                android:id="@+id/btnJumpRight"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:text="Jump Right"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/jump_stat_background"/>
+        </LinearLayout>
+
+        <!-- Show / Hide / LED / Login Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Hide"
-            android:layout_marginStart="16dp"/>
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginBottom="8dp">
+
+
+
+            <Button
+                android:id="@+id/hideView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Hide"
+                android:layout_marginStart="16dp"/>
+
+            <Button
+                android:id="@+id/hideLEDView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="LED"
+                android:layout_marginStart="16dp"/>
+
+            <Button
+                android:id="@+id/btnLogin"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Login"
+                android:layout_marginStart="16dp"/>
+        </LinearLayout>
+
+        <!-- LED Options Layout -->
+        <LinearLayout
+            android:id="@+id/ledOptions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginBottom="8dp">
+
+                <Button android:id="@+id/btnRed" android:layout_width="100dp" android:layout_height="50dp" android:text="Red" android:layout_margin="4dp"/>
+                <Button android:id="@+id/btnGreen" android:layout_width="100dp" android:layout_height="50dp" android:text="Green" android:layout_margin="4dp"/>
+                <Button android:id="@+id/btnBlue" android:layout_width="100dp" android:layout_height="50dp" android:text="Blue" android:layout_margin="4dp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginBottom="8dp">
+
+                <Button android:id="@+id/btnWhite" android:layout_width="100dp" android:layout_height="50dp" android:text="White" android:layout_margin="4dp"/>
+                <Button android:id="@+id/btnTopaz" android:layout_width="100dp" android:layout_height="50dp" android:text="Topaz" android:layout_margin="4dp"/>
+                <Button android:id="@+id/btnLilac" android:layout_width="100dp" android:layout_height="50dp" android:text="Lilac" android:layout_margin="4dp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginBottom="8dp">
+
+                <Button android:id="@+id/btnRainbow" android:layout_width="wrap_content" android:layout_height="50dp" android:text="Rainbow" android:layout_margin="4dp"/>
+                <Button android:id="@+id/btnSeizureMode" android:layout_width="wrap_content" android:layout_height="50dp" android:text="Seizure Mode" android:layout_margin="4dp"/>
+                <Button android:id="@+id/btnLEDOff" android:layout_width="100dp" android:layout_height="50dp" android:text="Off" android:layout_margin="4dp"/>
+            </LinearLayout>
+        </LinearLayout>
+
     </LinearLayout>
 
     <!-- Received Text Section -->
