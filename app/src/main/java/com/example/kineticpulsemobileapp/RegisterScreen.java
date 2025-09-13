@@ -82,7 +82,7 @@ public class RegisterScreen extends AppCompatActivity {
         String uid = auth.getCurrentUser() != null ? auth.getCurrentUser().getUid() : null;
 
         if (uid != null) {
-            RegisterRequest registerRequest = new RegisterRequest(username, uid);
+            RegisterRequest registerRequest = new RegisterRequest(uid, username);
 
             // Use RetrofitInstance to get the API handler
             RetrofitInstance.getApi().registerUser(registerRequest).enqueue(new Callback<ApiResponse>() {

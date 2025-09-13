@@ -42,6 +42,7 @@ import java.util.Arrays;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import org.json.JSONObject;
 
 public class TerminalFragment extends Fragment implements ServiceConnection, SerialListener {
 
@@ -59,10 +60,14 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private boolean hexEnabled = false;
     private boolean pendingNewline = false;
     private String newline = TextUtil.newline_crlf;
+    // Threshold for optional GYRO line parsing (accelerometer axes)
+    private static final float ACC_THRESHOLD = 2.5f; // tune per device
 
     private int jumpLeft = 0;
     private int jumpRight = 0;
-    private int middleJump = 0;
+    private int middleJump = 0; // up
+    private int jumpFront = 0;
+    private int jumpBack = 0;
 
     private Button btnLEDOptions;
     private View ledOptionsView;
@@ -99,6 +104,8 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private TextView tvJumpRight;
 
     private TextView tvJumpMiddle;
+    private TextView tvJumpFront;
+    private TextView tvJumpBack;
     /*
      * Lifecycle
      */
@@ -107,6 +114,8 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
         setRetainInstance(true);
+        // Initialize Firebase Auth for API submissions tied to a user
+        auth = FirebaseAuth.getInstance();
         deviceAddress = getArguments().getString("device");
     }
 
@@ -206,6 +215,8 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         tvJumpLeft = view.findViewById(R.id.tvJumpLeft);
         tvJumpRight = view.findViewById(R.id.tvJumpRight);
         tvJumpMiddle = view.findViewById(R.id.tvJumpMiddle);
+        tvJumpFront = view.findViewById(R.id.tvJumpFront);
+        tvJumpBack = view.findViewById(R.id.tvJumpBack);
         sendText = view.findViewById(R.id.send_text);
         hexWatcher = new TextUtil.HexWatcher(sendText);
         hexWatcher.enable(hexEnabled);
@@ -222,20 +233,25 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         });
 
         btnJumpLeft.setOnClickListener(v -> {
-            sendText.setText("1"); // Set sendText to "1"
+            sendText.setText("1");
             send("1");
-            jumpLeft++;// Ensure you have this image in drawable
-            saveJumpDataToAPI();// Send the value "1"
+            jumpLeft++;
+            if (tvJumpLeft != null) tvJumpLeft.setText(String.valueOf(jumpLeft));
+            saveJumpDataToAPI();
         });
         btnJumpUp.setOnClickListener(v -> {
-            sendText.setText("2"); // Set sendText to "2"
-            send("2");             // Send the value "2"
-
+            sendText.setText("2");
+            send("2");
+            middleJump++;
+            if (tvJumpMiddle != null) tvJumpMiddle.setText(String.valueOf(middleJump));
+            saveJumpDataToAPI();
         });
         btnJumpRight.setOnClickListener(v -> {
-            sendText.setText("3"); // Set sendText to "3"
-            send("3");             // Send the value "3"
-
+            sendText.setText("3");
+            send("3");
+            jumpRight++;
+            if (tvJumpRight != null) tvJumpRight.setText(String.valueOf(jumpRight));
+            saveJumpDataToAPI();
         });
         btnLogin.setOnClickListener(v -> {
             Intent loginIntent = new Intent(getActivity(), LoginScreen.class);
@@ -393,23 +409,64 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         for (byte[] data : datas) {
             String msg = new String(data);
 
+            // Optional: parse raw gyro lines if the device streams them
+            if (msg.startsWith("GYRO") || msg.startsWith("ACC")) {
+                detectFromSensorLine(msg);
+            }
+            // Optional: parse simple JSON messages, e.g. {"ax":0.3,"ay":-2.9} or {"direction":"Front"}
+            String trimmed = msg.trim();
+            if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+                try {
+                    JSONObject o = new JSONObject(trimmed);
+                    if (o.has("direction")) {
+                        String d = o.getString("direction").toLowerCase();
+                        if (d.contains("left")) { ivJump.setImageResource(R.drawable.stickmanjumpleft); jumpLeft++; if (tvJumpLeft!=null) tvJumpLeft.setText(String.valueOf(jumpLeft)); saveJumpDataToAPI(); }
+                        else if (d.contains("right")) { ivJump.setImageResource(R.drawable.stickmanjumpright); jumpRight++; if (tvJumpRight!=null) tvJumpRight.setText(String.valueOf(jumpRight)); saveJumpDataToAPI(); }
+                        else if (d.contains("front") || d.contains("forward")) { ivJump.setImageResource(R.drawable.stickmanjumpup); jumpFront++; if (tvJumpFront!=null) tvJumpFront.setText(String.valueOf(jumpFront)); saveJumpDataToAPI(); }
+                        else if (d.contains("back")) { ivJump.setImageResource(R.drawable.stickmanjumpup); jumpBack++; if (tvJumpBack!=null) tvJumpBack.setText(String.valueOf(jumpBack)); saveJumpDataToAPI(); }
+                        else if (d.contains("up") || d.contains("middle")) { ivJump.setImageResource(R.drawable.stickmanjumpup); middleJump++; if (tvJumpMiddle!=null) tvJumpMiddle.setText(String.valueOf(middleJump)); saveJumpDataToAPI(); }
+                    } else if (o.has("ax") || o.has("ay")) {
+                        float ax = (float) o.optDouble("ax", 0);
+                        float ay = (float) o.optDouble("ay", 0);
+                        if (ax > ACC_THRESHOLD) { ivJump.setImageResource(R.drawable.stickmanjumpright); jumpRight++; if (tvJumpRight!=null) tvJumpRight.setText(String.valueOf(jumpRight)); saveJumpDataToAPI(); }
+                        else if (ax < -ACC_THRESHOLD) { ivJump.setImageResource(R.drawable.stickmanjumpleft); jumpLeft++; if (tvJumpLeft!=null) tvJumpLeft.setText(String.valueOf(jumpLeft)); saveJumpDataToAPI(); }
+                        if (ay > ACC_THRESHOLD) { ivJump.setImageResource(R.drawable.stickmanjumpup); jumpFront++; if (tvJumpFront!=null) tvJumpFront.setText(String.valueOf(jumpFront)); saveJumpDataToAPI(); }
+                        else if (ay < -ACC_THRESHOLD) { ivJump.setImageResource(R.drawable.stickmanjumpup); jumpBack++; if (tvJumpBack!=null) tvJumpBack.setText(String.valueOf(jumpBack)); saveJumpDataToAPI(); }
+                    }
+                } catch (Exception ignored) {}
+            }
+
             // Check if the message contains the specific word "jump"
-            if (msg.contains("Lateral-Left Movement Detected")) {
-                // Set the image when "jump" is received
+            if (msg.contains("Lateral-Left Movement Detected") || msg.contains("Left")) {
                 ivJump.setImageResource(R.drawable.stickmanjumpleft);
-                jumpLeft++;// Ensure you have this image in drawable
+                jumpLeft++;
+                if (tvJumpLeft != null) tvJumpLeft.setText(String.valueOf(jumpLeft));
                 saveJumpDataToAPI();
             }
-            if (msg.contains("Jump detected! Yahoo! ^^")) {
-                // Set the image when "jump" is received
+            if (msg.contains("Jump detected! Yahoo! ^^") || msg.contains("Up") || msg.contains("Middle")) {
                 ivJump.setImageResource(R.drawable.stickmanjumpup);
                 middleJump++;
+                if (tvJumpMiddle != null) tvJumpMiddle.setText(String.valueOf(middleJump));
                 saveJumpDataToAPI();
             }
-            if (msg.contains("Lateral- Right Movement Detected")) {
-                // Set the image when "jump" is received
+            if (msg.contains("Lateral- Right Movement Detected") || msg.contains("Right")) {
                 ivJump.setImageResource(R.drawable.stickmanjumpright);
-                jumpRight++;// Ensure you have this image in drawable
+                jumpRight++;
+                if (tvJumpRight != null) tvJumpRight.setText(String.valueOf(jumpRight));
+                saveJumpDataToAPI();
+            }
+            if (msg.contains("Forward") || msg.contains("Front")) {
+                // no specific image resource provided for front; reuse up image for visualization
+                ivJump.setImageResource(R.drawable.stickmanjumpup);
+                jumpFront++;
+                if (tvJumpFront != null) tvJumpFront.setText(String.valueOf(jumpFront));
+                saveJumpDataToAPI();
+            }
+            if (msg.contains("Backward") || msg.contains("Back")) {
+                // no specific image resource provided for back; reuse up image for visualization
+                ivJump.setImageResource(R.drawable.stickmanjumpup);
+                jumpBack++;
+                if (tvJumpBack != null) tvJumpBack.setText(String.valueOf(jumpBack));
                 saveJumpDataToAPI();
             }
             if (hexEnabled) {
@@ -484,11 +541,13 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private void saveJumpDataToAPI() {
         FirebaseUser currentUser = auth.getCurrentUser();
         if (currentUser != null) {
+            // For compatibility with current API, send middleJump as combined up/front/back
+            int combinedMiddle = middleJump + jumpFront + jumpBack;
             JumpDataRequest jumpDataRequest = new JumpDataRequest(
-                    jumpLeft,   // Send leftJump score
-                    jumpRight,  // Send rightJump score
-                    middleJump, // Send middleJump score
-                    currentUser.getUid() // Send the current user's UID
+                    jumpLeft,
+                    jumpRight,
+                    combinedMiddle,
+                    currentUser.getUid()
             );
 
             // Use getApi() to get the APIHandler instance
@@ -523,6 +582,60 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         startActivity(intent);
     }
 
+
+
+    // Very lightweight parser for lines like: "GYRO ax=0.3 ay=-3.2 az=9.7 gx=.. gy=.. gz=.."
+    private void detectFromSensorLine(String line) {
+        try {
+            float ax = extractValue(line, "ax");
+            float ay = extractValue(line, "ay");
+            // Simple threshold-based direction detection using accelerometer axes
+            if (ax > ACC_THRESHOLD) {
+                ivJump.setImageResource(R.drawable.stickmanjumpright);
+                jumpRight++;
+                if (tvJumpRight != null) tvJumpRight.setText(String.valueOf(jumpRight));
+                saveJumpDataToAPI();
+            } else if (ax < -ACC_THRESHOLD) {
+                ivJump.setImageResource(R.drawable.stickmanjumpleft);
+                jumpLeft++;
+                if (tvJumpLeft != null) tvJumpLeft.setText(String.valueOf(jumpLeft));
+                saveJumpDataToAPI();
+            }
+            if (ay > ACC_THRESHOLD) {
+                ivJump.setImageResource(R.drawable.stickmanjumpup);
+                jumpFront++;
+                if (tvJumpFront != null) tvJumpFront.setText(String.valueOf(jumpFront));
+                saveJumpDataToAPI();
+            } else if (ay < -ACC_THRESHOLD) {
+                ivJump.setImageResource(R.drawable.stickmanjumpup);
+                jumpBack++;
+                if (tvJumpBack != null) tvJumpBack.setText(String.valueOf(jumpBack));
+                saveJumpDataToAPI();
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private float extractValue(String line, String key) {
+        int i = line.indexOf(key);
+        if (i < 0) throw new IllegalArgumentException();
+        int start = -1, end = -1;
+        for (int p = i + key.length(); p < line.length(); p++) {
+            char c = line.charAt(p);
+            if ((c == ':' || c == '=') && start < 0) {
+                // move to first digit sign after separator
+                for (int q = p + 1; q < line.length(); q++) {
+                    char d = line.charAt(q);
+                    if ((d >= '0' && d <= '9') || d == '-' || d == '+') { start = q; break; }
+                }
+            } else if (start >= 0) {
+                if (!((c >= '0' && c <= '9') || c == '.' || c == 'e' || c == 'E' || c == '-' || c == '+')) { end = p; break; }
+            }
+        }
+        if (start < 0) throw new IllegalArgumentException();
+        if (end < 0) end = line.length();
+        return Float.parseFloat(line.substring(start, end).trim());
+    }
 }
 
 

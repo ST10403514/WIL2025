@@ -8,4 +8,6 @@
     <string name="jumpLeft">Jump Left</string>
     <string name="jumpRight">Jump Right</string>
     <string name="jumpUp">Jump Up</string>
+    <string name="jumpFront">Jump Front</string>
+    <string name="jumpBack">Jump Back</string>
 </resources>

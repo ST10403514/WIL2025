@@ -17,7 +17,12 @@ public interface APIHandler {
 
     @GET("/getJumpData/{uid}")
     Call<JumpDataResponse> getjumpData(@Path("uid") String userId);
+
+    // Optional V2 endpoint that accepts separate front/back/up. Enable on backend before use.
+    @POST("/saveJumpDataV2")
+    Call<ApiResponse> saveJumpDataV2(@Body ExtendedJumpDataRequest scoreData);
 }
+
 
 
 class RegisterRequest {
@@ -168,4 +173,30 @@ class JumpDataRequest {
     public void setUid(String uid) {
         this.uid = uid;
     }
+}
+
+// Extended request if backend supports separate front/back/up fields
+class ExtendedJumpDataRequest {
+    private int leftJump;
+    private int rightJump;
+    private int upJump;
+    private int frontJump;
+    private int backJump;
+    private String uid;
+
+    public ExtendedJumpDataRequest(int leftJump, int rightJump, int upJump, int frontJump, int backJump, String uid) {
+        this.leftJump = leftJump;
+        this.rightJump = rightJump;
+        this.upJump = upJump;
+        this.frontJump = frontJump;
+        this.backJump = backJump;
+        this.uid = uid;
+    }
+
+    public int getLeftJump() { return leftJump; }
+    public int getRightJump() { return rightJump; }
+    public int getUpJump() { return upJump; }
+    public int getFrontJump() { return frontJump; }
+    public int getBackJump() { return backJump; }
+    public String getUid() { return uid; }
 }

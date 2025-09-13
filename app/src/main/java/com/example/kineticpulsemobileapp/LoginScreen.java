@@ -170,7 +170,7 @@ public class LoginScreen extends AppCompatActivity {
     private void saveUsernameToDatabase(String username, GoogleSignInAccount account) {
         String currentUserUid = auth.getCurrentUser().getUid();
 
-        RegisterRequest registerRequest = new RegisterRequest(username, currentUserUid);
+        RegisterRequest registerRequest = new RegisterRequest(currentUserUid, username);
         RetrofitInstance.getApi().registerUser(registerRequest).enqueue(new Callback<ApiResponse>() {
             @Override
             public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
