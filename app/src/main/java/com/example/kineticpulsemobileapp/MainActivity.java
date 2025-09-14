@@ -39,12 +39,14 @@ public class MainActivity extends AppCompatActivity implements FragmentManager.O
     @Override
     protected void onResume() {
         super.onResume();
-        if (gyroManager != null) gyroManager.start();
+        // Remove automatic gyro start - let TerminalFragment control it
+        Log.d("MainActivity", "onResume - gyro will be controlled by TerminalFragment");
     }
 
     @Override
     protected void onPause() {
-        if (gyroManager != null) gyroManager.stop();
+        // Remove automatic gyro stop - let TerminalFragment control it  
+        Log.d("MainActivity", "onPause - gyro will be controlled by TerminalFragment");
         super.onPause();
     }
 
@@ -54,5 +56,9 @@ public class MainActivity extends AppCompatActivity implements FragmentManager.O
 
     public void stopGyro() {
         if (gyroManager != null) gyroManager.stop();
+    }
+
+    public GyroManager getGyroManager() {
+        return gyroManager;
     }
 }
