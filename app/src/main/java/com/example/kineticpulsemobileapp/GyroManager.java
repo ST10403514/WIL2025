@@ -49,7 +49,7 @@ class GyroManager implements SensorEventListener {
     private enum CalibrationPhase { NONE, STEADY, LEFT, RIGHT, FORWARD, BACK, COMPLETE }
     private CalibrationPhase calibrationPhase = CalibrationPhase.NONE;
     private long phaseStartMs = 0L;
-    private static final long PHASE_DURATION_MS = 3000L;
+    private static final long PHASE_DURATION_MS = 800L; // Reduced from 1500ms to 800ms for much faster calibration
 
     GyroManager(Context context) {
         sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
@@ -76,8 +76,8 @@ class GyroManager implements SensorEventListener {
         }
         started = true;
         firstLogs = 0;
-        // ~60 Hz target (microseconds)
-        int periodUs = 16667;
+        // Use a fast but safe sampling rate (5ms = 200Hz)
+        int periodUs = 5000; // 5ms intervals for fast response without requiring special permissions
         boolean ok = sensorManager.registerListener(this, gyro, periodUs, periodUs);
         Log.i(TAG, ok ? "Gyro started" : "Failed to start Gyro listener");
     }
@@ -161,9 +161,9 @@ class GyroManager implements SensorEventListener {
         yawAngle = Math.max(-MAX_ANGLE, Math.min(MAX_ANGLE, yawAngle));
         pitchAngle = Math.max(-MAX_ANGLE, Math.min(MAX_ANGLE, pitchAngle));
 
-        // Determine pose from angles with MORE SENSITIVE thresholds
-        final float YAW_THRESH = (float)Math.toRadians(10);    // left/right (reduced from 20 to 10 degrees)
-        final float PITCH_THRESH = (float)Math.toRadians(10);  // forward/back (reduced from 20 to 10 degrees)
+        // Determine pose from angles with VERY SENSITIVE thresholds for fast response
+        final float YAW_THRESH = (float)Math.toRadians(6);    // left/right (reduced from 10 to 6 degrees)
+        final float PITCH_THRESH = (float)Math.toRadians(6);  // forward/back (reduced from 10 to 6 degrees)
         
         Pose newPose = Pose.MIDDLE; // Default to middle/neutral
         
@@ -185,8 +185,8 @@ class GyroManager implements SensorEventListener {
         }
 
         long now = System.currentTimeMillis();
-        final long DEBOUNCE_MS = 300; // reduced debounce time for faster response
-        final float MIN_MOVEMENT = (float)Math.toRadians(5); // minimum movement to trigger detection (reduced from 10 to 5 degrees)
+        final long DEBOUNCE_MS = 150; // Reduced from 300ms to 150ms for much faster response
+        final float MIN_MOVEMENT = (float)Math.toRadians(3); // Reduced from 5 to 3 degrees for more sensitive detection
         
         // Only trigger if we have significant movement and enough time has passed
         boolean hasSignificantMovement = Math.abs(yawAngle) > MIN_MOVEMENT || Math.abs(pitchAngle) > MIN_MOVEMENT;

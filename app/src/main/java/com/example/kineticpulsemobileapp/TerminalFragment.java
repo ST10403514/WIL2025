@@ -9,6 +9,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -115,6 +116,13 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private TextView tvLastMovement;
     
     private TextView tvCalibrationPrompt;
+    
+    // Auto-connect functionality
+    private static final String PREFS_NAME = "BluetoothPrefs";
+    private static final String PREF_DEVICE_ADDRESS = "saved_device_address";
+    private static final int MAX_CONNECT_ATTEMPTS = 3;
+    private int currentConnectAttempt = 0;
+    private boolean isAutoConnecting = false;
     /*
      * Lifecycle
      */
@@ -200,7 +208,19 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         if(initialStart && isResumed() && isAdded()) {
             initialStart = false;
             Activity a = getActivity();
-            if (a != null) a.runOnUiThread(this::connect);
+            if (a != null) {
+                a.runOnUiThread(() -> {
+                    // Try auto-connect first, fallback to manual connect if no saved device
+                    String savedAddress = getSavedDeviceAddress();
+                    if (savedAddress != null) {
+                        Log.i("TerminalFragment", "📱 Found saved device address, attempting auto-connect");
+                        attemptAutoConnect();
+                    } else {
+                        Log.i("TerminalFragment", "📱 No saved device address, starting manual connection");
+                        connect();
+                    }
+                });
+            }
         }
     }
 
@@ -557,7 +577,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         }
         @Override public void onRaw(float x, float y, float z) {
             // Log raw gyroscope data periodically to verify sensor is working
-            if (System.currentTimeMillis() % 2000 < 50) { // Log every ~2 seconds
+            if (System.currentTimeMillis() % 5000 < 50) { // Log every ~5 seconds (reduced frequency for better performance)
                 Log.d("TerminalFragment", String.format("🔄 GYRO RAW: x=%.3f y=%.3f z=%.3f", x, y, z));
             }
         }
@@ -566,31 +586,42 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private final GyroManager.CalibrationListener calibrationListener = new GyroManager.CalibrationListener() {
         @Override
         public void onCalibrationStart() {
-            getActivity().runOnUiThread(() -> {
-                tvCalibrationPrompt.setVisibility(View.VISIBLE);
-                tvCalibrationPrompt.setText("🔧 Calibration Starting...");
-                tvCalibrationPrompt.setTextColor(0xFFFFFFFF); // white
-            });
+            Activity activity = getActivity();
+            if (activity != null && tvCalibrationPrompt != null) {
+                activity.runOnUiThread(() -> {
+                    tvCalibrationPrompt.setVisibility(View.VISIBLE);
+                    tvCalibrationPrompt.setText("🔧 Calibration Starting...");
+                    tvCalibrationPrompt.setTextColor(0xFFFFFFFF); // white
+                });
+            }
         }
 
         @Override
         public void onCalibrationPhase(String instruction, int color) {
-            getActivity().runOnUiThread(() -> {
-                tvCalibrationPrompt.setVisibility(View.VISIBLE);
-                tvCalibrationPrompt.setText(instruction);
-                tvCalibrationPrompt.setTextColor(color);
-            });
+            Activity activity = getActivity();
+            if (activity != null && tvCalibrationPrompt != null) {
+                activity.runOnUiThread(() -> {
+                    tvCalibrationPrompt.setVisibility(View.VISIBLE);
+                    tvCalibrationPrompt.setText(instruction);
+                    tvCalibrationPrompt.setTextColor(color);
+                });
+            }
         }
 
         @Override
         public void onCalibrationComplete() {
-            getActivity().runOnUiThread(() -> {
-                tvCalibrationPrompt.setText("✅ Calibration Complete! Motion detection active.");
-                tvCalibrationPrompt.setTextColor(0xFF00FF00); // green
-                new Handler().postDelayed(() -> {
-                    tvCalibrationPrompt.setVisibility(View.GONE);
-                }, 2000); // Hide after 2 seconds
-            });
+            Activity activity = getActivity();
+            if (activity != null && tvCalibrationPrompt != null) {
+                activity.runOnUiThread(() -> {
+                    tvCalibrationPrompt.setText("✅ Calibration Complete! Motion detection active.");
+                    tvCalibrationPrompt.setTextColor(0xFF00FF00); // green
+                    new Handler().postDelayed(() -> {
+                        if (tvCalibrationPrompt != null) {
+                            tvCalibrationPrompt.setVisibility(View.GONE);
+                        }
+                    }, 2000); // Hide after 2 seconds
+                });
+            }
         }
     };
 
@@ -609,7 +640,9 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             
             if (gyroEnabled) {
                 gm.setMovementListener(gyroListener);
-                gm.setCalibrationListener(calibrationListener);
+                if (tvCalibrationPrompt != null && isAdded()) {
+                    gm.setCalibrationListener(calibrationListener);
+                }
                 gm.setProcessingEnabled(true);
                 gm.start(); // Start the gyroscope sensor
                 Toast.makeText(a, "Gyroscope enabled - move your device to detect jumps!", Toast.LENGTH_LONG).show();
@@ -646,7 +679,9 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
                     // Automatically enable gyroscope when the fragment is created
                     gyroEnabled = true;
                     gm.setMovementListener(gyroListener);
-                    gm.setCalibrationListener(calibrationListener);
+                    if (tvCalibrationPrompt != null && isAdded()) {
+                        gm.setCalibrationListener(calibrationListener);
+                    }
                     gm.setProcessingEnabled(true);
                     gm.start(); // ⭐ IMPORTANT: Start the gyroscope sensor
                     btnGyroToggle.setText("Gyro: ON");
@@ -930,6 +965,69 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             }
         }
     }
+    
+    /*
+     * Auto-connect functionality
+     */
+    private void saveDeviceAddress() {
+        if (service != null && connected == Connected.True && deviceAddress != null) {
+            SharedPreferences prefs = requireContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+            prefs.edit().putString(PREF_DEVICE_ADDRESS, deviceAddress).apply();
+            Log.i("TerminalFragment", "📱 Saved device address for auto-connect: " + deviceAddress);
+        }
+    }
+    
+    private String getSavedDeviceAddress() {
+        SharedPreferences prefs = requireContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        return prefs.getString(PREF_DEVICE_ADDRESS, null);
+    }
+    
+    private void attemptAutoConnect() {
+        String savedAddress = getSavedDeviceAddress();
+        if (savedAddress == null) {
+            Log.i("TerminalFragment", "📱 No saved device address - showing device selection");
+            showDeviceSelectionDialog();
+            return;
+        }
+        
+        if (currentConnectAttempt >= MAX_CONNECT_ATTEMPTS) {
+            Log.i("TerminalFragment", "📱 Max auto-connect attempts reached - showing device selection");
+            showDeviceSelectionDialog();
+            return;
+        }
+        
+        currentConnectAttempt++;
+        isAutoConnecting = true;
+        Log.i("TerminalFragment", "📱 Auto-connect attempt " + currentConnectAttempt + "/" + MAX_CONNECT_ATTEMPTS + " to: " + savedAddress);
+        
+        BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
+            Log.w("TerminalFragment", "📱 Bluetooth not available/enabled - showing device selection");
+            showDeviceSelectionDialog();
+            return;
+        }
+        
+        try {
+            // Set the device address and use existing connect method
+            deviceAddress = savedAddress;
+            connect();
+        } catch (Exception e) {
+            Log.e("TerminalFragment", "📱 Auto-connect failed: " + e.getMessage());
+            onSerialConnectError(e);
+        }
+    }
+    
+    private void showDeviceSelectionDialog() {
+        // Reset auto-connect state
+        isAutoConnecting = false;
+        currentConnectAttempt = 0;
+        
+        // Navigate back to DevicesFragment for device selection
+        if (getActivity() != null) {
+            getActivity().getSupportFragmentManager().popBackStack();
+            Log.i("TerminalFragment", "📱 Navigated back to device selection");
+        }
+    }
 
     /*
      * SerialListener
@@ -939,6 +1037,13 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         status("connected");
         connected = Connected.True;
         Log.i("TerminalFragment", "✅ Bluetooth connected successfully");
+        
+        // Save device address for auto-connect
+        saveDeviceAddress();
+        
+        // Reset auto-connect attempt counter on successful connection
+        currentConnectAttempt = 0;
+        isAutoConnecting = false;
         
         // Test LED connection when Bluetooth connects
         Handler handler = new Handler();
@@ -952,9 +1057,24 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         status("connection failed: " + e.getMessage());
         setLEDForConnectionLost(); // Set LED to RED
         disconnect();
-        // try to auto-reconnect after short delay
-        reconnectHandler.removeCallbacks(reconnectRunnable);
-        reconnectHandler.postDelayed(reconnectRunnable, 1500);
+        
+        if (isAutoConnecting && currentConnectAttempt < MAX_CONNECT_ATTEMPTS) {
+            // Retry auto-connect
+            Log.i("TerminalFragment", "📱 Auto-connect failed, retrying in 2 seconds... (attempt " + currentConnectAttempt + "/" + MAX_CONNECT_ATTEMPTS + ")");
+            Handler handler = new Handler();
+            handler.postDelayed(() -> attemptAutoConnect(), 2000);
+        } else if (isAutoConnecting) {
+            // Max attempts reached, show device selection
+            Log.i("TerminalFragment", "📱 Auto-connect failed after " + MAX_CONNECT_ATTEMPTS + " attempts - showing device selection");
+            showDeviceSelectionDialog();
+        } else {
+            // Regular connection error - try to auto-reconnect if we have a saved address
+            String savedAddress = getSavedDeviceAddress();
+            if (savedAddress != null) {
+                reconnectHandler.removeCallbacks(reconnectRunnable);
+                reconnectHandler.postDelayed(reconnectRunnable, 1500);
+            }
+        }
     }
 
     @Override
