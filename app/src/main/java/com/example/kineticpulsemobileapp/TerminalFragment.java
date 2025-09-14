@@ -113,6 +113,8 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private TextView tvJumpBack;
     
     private TextView tvLastMovement;
+    
+    private TextView tvCalibrationPrompt;
     /*
      * Lifecycle
      */
@@ -245,6 +247,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         tvJumpMiddle = view.findViewById(R.id.tvJumpMiddle);
         tvJumpBack = view.findViewById(R.id.tvJumpBack);
         tvLastMovement = view.findViewById(R.id.tvLastMovement);
+        tvCalibrationPrompt = view.findViewById(R.id.tvCalibrationPrompt);
         sendText = view.findViewById(R.id.send_text);
         hexWatcher = new TextUtil.HexWatcher(sendText);
         hexWatcher.enable(hexEnabled);
@@ -559,6 +562,37 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             }
         }
     };
+    
+    private final GyroManager.CalibrationListener calibrationListener = new GyroManager.CalibrationListener() {
+        @Override
+        public void onCalibrationStart() {
+            getActivity().runOnUiThread(() -> {
+                tvCalibrationPrompt.setVisibility(View.VISIBLE);
+                tvCalibrationPrompt.setText("🔧 Calibration Starting...");
+                tvCalibrationPrompt.setTextColor(0xFFFFFFFF); // white
+            });
+        }
+
+        @Override
+        public void onCalibrationPhase(String instruction, int color) {
+            getActivity().runOnUiThread(() -> {
+                tvCalibrationPrompt.setVisibility(View.VISIBLE);
+                tvCalibrationPrompt.setText(instruction);
+                tvCalibrationPrompt.setTextColor(color);
+            });
+        }
+
+        @Override
+        public void onCalibrationComplete() {
+            getActivity().runOnUiThread(() -> {
+                tvCalibrationPrompt.setText("✅ Calibration Complete! Motion detection active.");
+                tvCalibrationPrompt.setTextColor(0xFF00FF00); // green
+                new Handler().postDelayed(() -> {
+                    tvCalibrationPrompt.setVisibility(View.GONE);
+                }, 2000); // Hide after 2 seconds
+            });
+        }
+    };
 
     private void toggleGyro() {
         Activity a = getActivity();
@@ -575,6 +609,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             
             if (gyroEnabled) {
                 gm.setMovementListener(gyroListener);
+                gm.setCalibrationListener(calibrationListener);
                 gm.setProcessingEnabled(true);
                 gm.start(); // Start the gyroscope sensor
                 Toast.makeText(a, "Gyroscope enabled - move your device to detect jumps!", Toast.LENGTH_LONG).show();
@@ -611,6 +646,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
                     // Automatically enable gyroscope when the fragment is created
                     gyroEnabled = true;
                     gm.setMovementListener(gyroListener);
+                    gm.setCalibrationListener(calibrationListener);
                     gm.setProcessingEnabled(true);
                     gm.start(); // ⭐ IMPORTANT: Start the gyroscope sensor
                     btnGyroToggle.setText("Gyro: ON");

@@ -22,11 +22,18 @@ class GyroManager implements SensorEventListener {
         void onBack();   // backward tilt
         default void onRaw(float x, float y, float z) {}
     }
+    
+    interface CalibrationListener {
+        void onCalibrationStart();
+        void onCalibrationPhase(String instruction, int color);
+        void onCalibrationComplete();
+    }
 
     private boolean started = false;
     private int firstLogs = 0;
     private volatile boolean processingEnabled = false;
     private MovementListener listener;
+    private CalibrationListener calibrationListener;
     private long lastEventMs = 0L;
     private long lastTsNs = 0L;
     private float yawAngle = 0f;   // integrate z (yaw)
@@ -37,6 +44,12 @@ class GyroManager implements SensorEventListener {
     private boolean calibrating = false;
     private long calibStartMs = 0L;
     private static final long CALIBRATION_MS = 2000L;
+    
+    // Interactive calibration states
+    private enum CalibrationPhase { NONE, STEADY, LEFT, RIGHT, FORWARD, BACK, COMPLETE }
+    private CalibrationPhase calibrationPhase = CalibrationPhase.NONE;
+    private long phaseStartMs = 0L;
+    private static final long PHASE_DURATION_MS = 3000L;
 
     GyroManager(Context context) {
         sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
@@ -79,23 +92,37 @@ class GyroManager implements SensorEventListener {
     void setMovementListener(MovementListener l) {
         this.listener = l;
     }
+    
+    void setCalibrationListener(CalibrationListener l) {
+        this.calibrationListener = l;
+    }
 
     void setProcessingEnabled(boolean enabled) {
         processingEnabled = enabled;
         Log.i(TAG, "processingEnabled=" + enabled);
         if (enabled) {
-            // Start a 2s calibration window to establish baseline
-            calibrating = true;
-            calibStartMs = System.currentTimeMillis();
-            yawAngle = 0f;
-            pitchAngle = 0f;
-            lastTsNs = 0L;
-            currentPose = Pose.MIDDLE; // Reset to middle position
-            Log.i(TAG, "calibrating for " + CALIBRATION_MS + "ms - hold device steady");
+            // Start interactive calibration sequence
+            startInteractiveCalibration();
         } else {
+            calibrationPhase = CalibrationPhase.NONE;
             calibrating = false;
             currentPose = Pose.MIDDLE; // Reset to middle position
         }
+    }
+    
+    private void startInteractiveCalibration() {
+        calibrationPhase = CalibrationPhase.STEADY;
+        phaseStartMs = System.currentTimeMillis();
+        calibrating = true;
+        yawAngle = 0f;
+        pitchAngle = 0f;
+        lastTsNs = 0L;
+        currentPose = Pose.MIDDLE;
+        if (calibrationListener != null) {
+            calibrationListener.onCalibrationStart();
+            calibrationListener.onCalibrationPhase("Hold device steady", 0xFFFFFFFF); // white
+        }
+        Log.i(TAG, "Starting interactive calibration - hold device steady");
     }
 
     @Override
@@ -120,18 +147,13 @@ class GyroManager implements SensorEventListener {
         yawAngle += z * dt;
         pitchAngle += x * dt;
 
-        if (calibrating) {
-            if (System.currentTimeMillis() - calibStartMs >= CALIBRATION_MS) {
-                // Baseline established; reset integrators so 0 = baseline
-                yawAngle = 0f;
-                pitchAngle = 0f;
-                lastTsNs = 0L;
-                calibrating = false;
-                Log.i(TAG, "calibrated");
-            } else {
-                // still calibrating; don't detect
-                return;
+        // Handle interactive calibration phases
+        if (calibrating && calibrationPhase != CalibrationPhase.COMPLETE) {
+            long phaseElapsed = System.currentTimeMillis() - phaseStartMs;
+            if (phaseElapsed >= PHASE_DURATION_MS) {
+                advanceCalibrationPhase();
             }
+            return; // Don't process movements during calibration
         }
 
         // Clamp to avoid runaway drift during long inactivity
@@ -139,9 +161,9 @@ class GyroManager implements SensorEventListener {
         yawAngle = Math.max(-MAX_ANGLE, Math.min(MAX_ANGLE, yawAngle));
         pitchAngle = Math.max(-MAX_ANGLE, Math.min(MAX_ANGLE, pitchAngle));
 
-        // Determine pose from angles with thresholds
-        final float YAW_THRESH = (float)Math.toRadians(20);    // left/right (increased back to 20 for stability)
-        final float PITCH_THRESH = (float)Math.toRadians(20);  // forward/back (increased back to 20 for stability)
+        // Determine pose from angles with MORE SENSITIVE thresholds
+        final float YAW_THRESH = (float)Math.toRadians(10);    // left/right (reduced from 20 to 10 degrees)
+        final float PITCH_THRESH = (float)Math.toRadians(10);  // forward/back (reduced from 20 to 10 degrees)
         
         Pose newPose = Pose.MIDDLE; // Default to middle/neutral
         
@@ -163,8 +185,8 @@ class GyroManager implements SensorEventListener {
         }
 
         long now = System.currentTimeMillis();
-        final long DEBOUNCE_MS = 400; // increased debounce time for better stability
-        final float MIN_MOVEMENT = (float)Math.toRadians(10); // minimum movement to trigger detection
+        final long DEBOUNCE_MS = 300; // reduced debounce time for faster response
+        final float MIN_MOVEMENT = (float)Math.toRadians(5); // minimum movement to trigger detection (reduced from 10 to 5 degrees)
         
         // Only trigger if we have significant movement and enough time has passed
         boolean hasSignificantMovement = Math.abs(yawAngle) > MIN_MOVEMENT || Math.abs(pitchAngle) > MIN_MOVEMENT;
@@ -183,6 +205,63 @@ class GyroManager implements SensorEventListener {
             yawAngle = 0f;
             pitchAngle = 0f;
             lastTsNs = 0L; // reset integration baseline
+        }
+    }
+    
+    private void advanceCalibrationPhase() {
+        switch (calibrationPhase) {
+            case STEADY:
+                calibrationPhase = CalibrationPhase.LEFT;
+                phaseStartMs = System.currentTimeMillis();
+                yawAngle = 0f; // Reset angles for next phase
+                pitchAngle = 0f;
+                if (calibrationListener != null) {
+                    calibrationListener.onCalibrationPhase("🔄 Tilt LEFT", 0xFFFFFF00); // yellow
+                }
+                Log.i(TAG, "Calibration: Tilt LEFT");
+                break;
+            case LEFT:
+                calibrationPhase = CalibrationPhase.RIGHT;
+                phaseStartMs = System.currentTimeMillis();
+                yawAngle = 0f;
+                pitchAngle = 0f;
+                if (calibrationListener != null) {
+                    calibrationListener.onCalibrationPhase("🔄 Tilt RIGHT", 0xFF00FF00); // green
+                }
+                Log.i(TAG, "Calibration: Tilt RIGHT");
+                break;
+            case RIGHT:
+                calibrationPhase = CalibrationPhase.FORWARD;
+                phaseStartMs = System.currentTimeMillis();
+                yawAngle = 0f;
+                pitchAngle = 0f;
+                if (calibrationListener != null) {
+                    calibrationListener.onCalibrationPhase("🔄 Tilt FORWARD", 0xFFFFFFFF); // white
+                }
+                Log.i(TAG, "Calibration: Tilt FORWARD");
+                break;
+            case FORWARD:
+                calibrationPhase = CalibrationPhase.BACK;
+                phaseStartMs = System.currentTimeMillis();
+                yawAngle = 0f;
+                pitchAngle = 0f;
+                if (calibrationListener != null) {
+                    calibrationListener.onCalibrationPhase("🔄 Tilt BACK", 0xFFFF00FF); // pink/magenta
+                }
+                Log.i(TAG, "Calibration: Tilt BACK");
+                break;
+            case BACK:
+                calibrationPhase = CalibrationPhase.COMPLETE;
+                calibrating = false;
+                yawAngle = 0f;
+                pitchAngle = 0f;
+                if (calibrationListener != null) {
+                    calibrationListener.onCalibrationComplete();
+                }
+                Log.i(TAG, "Calibration complete! Motion detection active.");
+                break;
+            default:
+                break;
         }
     }
 
