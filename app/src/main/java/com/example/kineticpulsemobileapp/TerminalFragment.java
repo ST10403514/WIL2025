@@ -483,6 +483,9 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         SpannableStringBuilder spn = new SpannableStringBuilder();
         for (byte[] data : datas) {
             String msg = new String(data);
+            
+            // Debug: Log all received messages
+            Log.d("TerminalFragment", "📥 RECEIVED FROM ESP32: '" + msg + "'");
 
             // Check if the message contains the specific word "jump"
             if (msg.contains("Lateral-Left Movement Detected")) {

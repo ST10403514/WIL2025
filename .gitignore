@@ -20,3 +20,6 @@ app/src/main/res/raw/google_services.json
 
 # Ignore flavor google-services
 app/src/**/google-services.json
+
+# Local backup archives
+backups/

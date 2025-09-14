@@ -49,7 +49,9 @@ class GyroManager implements SensorEventListener {
     private enum CalibrationPhase { NONE, STEADY, LEFT, RIGHT, FORWARD, BACK, COMPLETE }
     private CalibrationPhase calibrationPhase = CalibrationPhase.NONE;
     private long phaseStartMs = 0L;
-    private static final long PHASE_DURATION_MS = 800L; // Reduced from 1500ms to 800ms for much faster calibration
+    // Configurable calibration phase duration - can be adjusted based on user needs
+    private static final long DEFAULT_PHASE_DURATION_MS = 1200L; // Extended from 800ms to 1200ms for more reliable calibration
+    private static long PHASE_DURATION_MS = DEFAULT_PHASE_DURATION_MS;
 
     GyroManager(Context context) {
         sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
@@ -95,6 +97,19 @@ class GyroManager implements SensorEventListener {
     
     void setCalibrationListener(CalibrationListener l) {
         this.calibrationListener = l;
+    }
+
+    /**
+     * Set the calibration phase duration in milliseconds.
+     * @param durationMs Duration for each calibration phase (default: 1200ms)
+     */
+    void setCalibrationPhaseDuration(long durationMs) {
+        if (durationMs >= 500 && durationMs <= 3000) {
+            PHASE_DURATION_MS = durationMs;
+            Log.i(TAG, "Calibration phase duration set to " + durationMs + "ms");
+        } else {
+            Log.w(TAG, "Invalid phase duration " + durationMs + "ms, keeping current: " + PHASE_DURATION_MS + "ms");
+        }
     }
 
     void setProcessingEnabled(boolean enabled) {
