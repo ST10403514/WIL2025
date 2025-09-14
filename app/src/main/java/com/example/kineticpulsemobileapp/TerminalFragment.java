@@ -107,30 +107,34 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
         setRetainInstance(true);
-        deviceAddress = getArguments().getString("device");
+        auth = FirebaseAuth.getInstance();
+        Bundle args = getArguments();
+        deviceAddress = args != null ? args.getString("device") : null;
     }
 
     @Override
     public void onDestroy() {
-        if (connected != Connected.False)
-            disconnect();
-        getActivity().stopService(new Intent(getActivity(), SerialService.class));
+        if (connected != Connected.False) disconnect();
+        Activity a = getActivity();
+        if (a != null) a.stopService(new Intent(a, SerialService.class));
         super.onDestroy();
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        if(service != null)
+        if(service != null) {
             service.attach(this);
-        else
-            getActivity().startService(new Intent(getActivity(), SerialService.class)); // prevents service destroy on unbind from recreated activity caused by orientation change
+        } else {
+            Activity a = getActivity();
+            if (a != null) a.startService(new Intent(a, SerialService.class));
+        }
     }
 
     @Override
     public void onStop() {
-        if(service != null && !getActivity().isChangingConfigurations())
-            service.detach();
+        Activity a = getActivity();
+        if(service != null && a != null && !a.isChangingConfigurations()) service.detach();
         super.onStop();
     }
 
@@ -138,21 +142,23 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     @Override
     public void onAttach(@NonNull Activity activity) {
         super.onAttach(activity);
-        getActivity().bindService(new Intent(getActivity(), SerialService.class), this, Context.BIND_AUTO_CREATE);
+        activity.bindService(new Intent(activity, SerialService.class), this, Context.BIND_AUTO_CREATE);
     }
 
     @Override
     public void onDetach() {
-        try { getActivity().unbindService(this); } catch(Exception ignored) {}
+        Activity a = getActivity();
+        try { if (a != null) a.unbindService(this); } catch(Exception ignored) {}
         super.onDetach();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        if(initialStart && service != null) {
+        if(initialStart && service != null && isAdded()) {
             initialStart = false;
-            getActivity().runOnUiThread(this::connect);
+            Activity a = getActivity();
+            if (a != null) a.runOnUiThread(this::connect);
         }
     }
 
@@ -160,9 +166,10 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     public void onServiceConnected(ComponentName name, IBinder binder) {
         service = ((SerialService.SerialBinder) binder).getService();
         service.attach(this);
-        if(initialStart && isResumed()) {
+        if(initialStart && isResumed() && isAdded()) {
             initialStart = false;
-            getActivity().runOnUiThread(this::connect);
+            Activity a = getActivity();
+            if (a != null) a.runOnUiThread(this::connect);
         }
     }
 
@@ -346,10 +353,23 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private void connect() {
         try {
             BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+            if (bluetoothAdapter == null) {
+                status("Bluetooth not available");
+                return;
+            }
+            if (deviceAddress == null) {
+                status("No device selected");
+                return;
+            }
             BluetoothDevice device = bluetoothAdapter.getRemoteDevice(deviceAddress);
             status("connecting...");
             connected = Connected.Pending;
-            SerialSocket socket = new SerialSocket(getActivity().getApplicationContext(), device);
+            Activity a = getActivity();
+            if (a == null || service == null) {
+                status("Service not available");
+                return;
+            }
+            SerialSocket socket = new SerialSocket(a.getApplicationContext(), device);
             service.connect(socket);
         } catch (Exception e) {
             onSerialConnectError(e);
@@ -358,12 +378,13 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
 
     private void disconnect() {
         connected = Connected.False;
-        service.disconnect();
+        if (service != null) service.disconnect();
     }
 
     private void send(String str) {
-        if(connected != Connected.True) {
-            Toast.makeText(getActivity(), "not connected", Toast.LENGTH_SHORT).show();
+        Activity a = getActivity();
+        if(connected != Connected.True || a == null || service == null) {
+            if (a != null) Toast.makeText(a, "not connected", Toast.LENGTH_SHORT).show();
             return;
         }
         try {
@@ -436,16 +457,18 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
      */
 
     private void showNotificationSettings() {
+        Activity a = getActivity();
+        if (a == null) return;
         Intent intent = new Intent();
         intent.setAction("android.settings.APP_NOTIFICATION_SETTINGS");
-        intent.putExtra("android.provider.extra.APP_PACKAGE", getActivity().getPackageName());
+        intent.putExtra("android.provider.extra.APP_PACKAGE", a.getPackageName());
         startActivity(intent);
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if(Arrays.equals(permissions, new String[]{Manifest.permission.POST_NOTIFICATIONS}) &&
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !service.areNotificationsEnabled())
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && service != null && !service.areNotificationsEnabled())
             showNotificationSettings();
     }
 
@@ -482,7 +505,8 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     }
 
     private void saveJumpDataToAPI() {
-        FirebaseUser currentUser = auth.getCurrentUser();
+        if (auth == null) auth = FirebaseAuth.getInstance();
+        FirebaseUser currentUser = auth != null ? auth.getCurrentUser() : null;
         if (currentUser != null) {
             JumpDataRequest jumpDataRequest = new JumpDataRequest(
                     jumpLeft,   // Send leftJump score
