@@ -178,6 +178,37 @@
         </LinearLayout>
     </LinearLayout>
 
+    <!-- Flash Animation Area -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:layout_marginBottom="16dp"
+        android:background="@color/backgroundLight"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🏃 Movement Animation"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:layout_marginBottom="8dp" />
+
+        <ImageView
+            android:id="@+id/ivMovementFlash"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:layout_gravity="center"
+            android:layout_marginTop="24dp"
+            android:scaleType="centerInside"
+            android:visibility="gone"
+            android:background="#33FFFFFF"
+            android:padding="8dp" />
+
+    </FrameLayout>
+
     <!-- LED Options (Hidden by default) -->
     <LinearLayout
         android:id="@+id/ledOptions"

@@ -10,6 +10,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -20,6 +24,8 @@ import android.text.SpannableStringBuilder;
 import android.text.method.ScrollingMovementMethod;
 import android.text.style.ForegroundColorSpan;
 import android.util.Log;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -50,9 +56,12 @@ import retrofit2.Response;
 public class TerminalFragment extends Fragment implements ServiceConnection, SerialListener {
 
     private enum Connected { False, Pending, True }
+    private enum SensorMode { PHONE_GYRO, ESP32_ADXL345, SECOND_PHONE_GYRO }
+    
     private FirebaseAuth auth;
     private String deviceAddress;
     private SerialService service;
+    private SensorMode currentSensorMode = SensorMode.ESP32_ADXL345; // Default to ESP32
 
     private TextView receiveText;
     private TextView sendText;
@@ -63,6 +72,13 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private boolean hexEnabled = false;
     private boolean pendingNewline = false;
     private String newline = TextUtil.newline_crlf;
+    
+    // Phone sensor variables
+    private SensorManager sensorManager;
+    private Sensor gyroSensor;
+    private Sensor accelerometerSensor;
+    private boolean gyroEnabled = false;
+    
     private static final int REQ_BT_CONNECT = 1001;
     private final Handler reconnectHandler = new Handler(Looper.getMainLooper());
     private final Runnable reconnectRunnable = () -> {
@@ -104,6 +120,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private View showView;
 
     private ImageView ivJump;
+    private ImageView ivMovementFlash;
 
     private TextView tvJumpLeft;
 
@@ -256,6 +273,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         btnLogin = view.findViewById(R.id.btnLogin);
         btnGyroToggle = view.findViewById(R.id.btnGyroToggle);
         ivJump = view.findViewById(R.id.ivJump);
+        ivMovementFlash = view.findViewById(R.id.ivMovementFlash);
         showView = view.findViewById(R.id.showView);
         hideView = view.findViewById(R.id.hideView);
         buttonsView = view.findViewById(R.id.buttonsView);
@@ -328,6 +346,9 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             } else if ("LEDTEST".equalsIgnoreCase(text)) {
                 sendText.setText("");
                 runLEDTestSequence();
+            } else if ("ACCELTEST".equalsIgnoreCase(text)) {
+                sendText.setText("");
+                runAccelTestSequence();
             } else {
                 send(text);
             }
@@ -335,8 +356,8 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
 
         btnGyroToggle.setOnClickListener(v -> toggleGyro());
         
-        // Initialize gyro button text
-        btnGyroToggle.setText(gyroEnabled ? "Gyro: ON" : "Gyro: OFF");
+        // Initialize sensor mode button text
+        updateGyroToggleButton();
         
         // Check if gyroscope is available and show status
         Activity activity = getActivity();
@@ -449,6 +470,9 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private void disconnect() {
         connected = Connected.False;
         if (service != null) service.disconnect();
+        
+        // Update button to show disconnected status
+        updateGyroToggleButton();
     }
 
     private void send(String str) {
@@ -483,37 +507,16 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         SpannableStringBuilder spn = new SpannableStringBuilder();
         for (byte[] data : datas) {
             String msg = new String(data);
+            
+            // Debug: Log all received messages from ESP32
+            Log.d("TerminalFragment", "📥 ESP32 DATA: '" + msg + "'");
 
-            // Check if the message contains the specific word "jump"
-            if (msg.contains("Lateral-Left Movement Detected")) {
-                if (ivJump != null) ivJump.setImageResource(R.drawable.stickmanjumpleft);
-                jumpLeft++;
-                updateJumpLabels();
-                saveJumpDataToAPI();
-                setLEDForLeftJump(); // Set LED to YELLOW
+            // ===== ESP32 + ADXL345 MOVEMENT DETECTION =====
+            if (currentSensorMode == SensorMode.ESP32_ADXL345) {
+                processESP32MovementData(msg);
             }
-            if (msg.contains("Jump detected! Yahoo! ^^")) {
-                if (ivJump != null) ivJump.setImageResource(R.drawable.stickmanjumpup);
-                jumpUp++;
-                updateJumpLabels();
-                saveJumpDataToAPI();
-                setLEDForForwardJump(); // Set LED to WHITE
-            }
-            if (msg.contains("Lateral- Right Movement Detected")) {
-                if (ivJump != null) ivJump.setImageResource(R.drawable.stickmanjumpright);
-                jumpRight++;
-                updateJumpLabels();
-                saveJumpDataToAPI();
-                setLEDForRightJump(); // Set LED to GREEN
-            }
-            // Check for back jump detection (if you have this message)
-            if (msg.contains("Back Movement Detected") || msg.contains("Backward Jump")) {
-                if (ivJump != null) ivJump.setImageResource(R.drawable.stickmanjumpup);
-                jumpBack++;
-                updateJumpLabels();
-                saveJumpDataToAPI();
-                setLEDForBackJump(); // Set LED to PINK
-            }
+
+            // Display received data in terminal
             if (hexEnabled) {
                 spn.append(TextUtil.toHexString(data)).append('\n');
             } else {
@@ -527,13 +530,195 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         receiveText.append(spn);
     }
 
+    // ===== ESP32 + ADXL345 DATA PROCESSING =====
+    private void processESP32MovementData(String msg) {
+        try {
+            // Handle different ESP32 data formats:
+            
+            // Format 1: Raw accelerometer data "ACCEL:x,y,z"
+            if (msg.startsWith("ACCEL:")) {
+                parseAccelerometerData(msg);
+            }
+            // Format 2: Processed movement commands "MOVE:LEFT", "MOVE:RIGHT", etc.
+            else if (msg.startsWith("MOVE:")) {
+                parseMovementCommand(msg);
+            }
+            // Format 3: Legacy movement text messages (for compatibility)
+            else if (msg.contains("Movement Detected") || msg.contains("Jump detected")) {
+                parseMovementText(msg);
+            }
+            
+        } catch (Exception e) {
+            Log.e("TerminalFragment", "🔧 ESP32 DATA ERROR: Failed to process ESP32 data: " + msg + " - " + e.getMessage());
+        }
+    }
+
+    private void parseAccelerometerData(String accelMessage) {
+        // Expected format: "ACCEL:x,y,z" (e.g., "ACCEL:0.25,-0.13,0.07")
+        if (!accelMessage.startsWith("ACCEL:")) return;
+        
+        String values = accelMessage.substring(6); // Remove "ACCEL:" prefix
+        String[] parts = values.split(",");
+        
+        if (parts.length >= 3) {
+            float accelX = Float.parseFloat(parts[0].trim());
+            float accelY = Float.parseFloat(parts[1].trim());
+            float accelZ = Float.parseFloat(parts[2].trim());
+            
+            // Log raw accelerometer data
+            Log.d("TerminalFragment", String.format("🔄 ESP32 ACCEL RAW: x=%.3f y=%.3f z=%.3f", accelX, accelY, accelZ));
+            
+            // Process movement detection based on accelerometer thresholds
+            processAccelerometerMovement(accelX, accelY, accelZ);
+        }
+    }
+
+    private void parseMovementCommand(String moveMessage) {
+        // Expected format: "MOVE:LEFT", "MOVE:RIGHT", "MOVE:FORWARD", "MOVE:BACK"
+        if (!moveMessage.startsWith("MOVE:")) return;
+        
+        String direction = moveMessage.substring(5).trim().toUpperCase();
+        Log.d("TerminalFragment", "🎯 ESP32 MOVE COMMAND: " + direction);
+        
+        switch (direction) {
+            case "LEFT":
+                handleLeftMovement();
+                break;
+            case "RIGHT":
+                handleRightMovement();
+                break;
+            case "FORWARD":
+            case "UP":
+                handleForwardMovement();
+                break;
+            case "BACK":
+            case "BACKWARD":
+                handleBackMovement();
+                break;
+        }
+    }
+
+    private void parseMovementText(String textMessage) {
+        // Handle legacy text formats for compatibility
+        if (textMessage.contains("Lateral-Left Movement Detected")) {
+            handleLeftMovement();
+        } else if (textMessage.contains("Jump detected! Yahoo! ^^")) {
+            handleForwardMovement();
+        } else if (textMessage.contains("Lateral- Right Movement Detected")) {
+            handleRightMovement();
+        } else if (textMessage.contains("Back Movement Detected") || textMessage.contains("Backward Jump")) {
+            handleBackMovement();
+        }
+    }
+
+    private void processAccelerometerMovement(float accelX, float accelY, float accelZ) {
+        // Define movement thresholds for ADXL345 accelerometer
+        final float ACCEL_THRESHOLD = 2.0f; // Adjust based on your ESP32 sensitivity
+        
+        // Determine movement direction based on acceleration values
+        // Note: These may need adjustment based on your ESP32 orientation
+        
+        if (Math.abs(accelX) > ACCEL_THRESHOLD) {
+            if (accelX > ACCEL_THRESHOLD) {
+                handleRightMovement();
+            } else {
+                handleLeftMovement();
+            }
+        }
+        else if (Math.abs(accelY) > ACCEL_THRESHOLD) {
+            if (accelY > ACCEL_THRESHOLD) {
+                handleForwardMovement();
+            } else {
+                handleBackMovement();
+            }
+        }
+    }
+
+    // ===== MOVEMENT HANDLERS =====
+    private void handleLeftMovement() {
+        Log.i("TerminalFragment", "🎯 ESP32 MOVEMENT: LEFT detected!");
+        if (ivJump != null) ivJump.setImageResource(R.drawable.stickmanjumpleft);
+        jumpLeft++;
+        updateJumpLabels();
+        updateLastMovementText("⬅️ LEFT MOVEMENT (ESP32)", "#0000FF");
+        saveJumpDataToAPI();
+        setLEDForLeftJump();
+        showToast("Left movement detected! LED: BLUE");
+        
+        // Show flash animation for left movement
+        showMovementFlash(R.drawable.stickmanjumpleft);
+    }
+
+    private void handleRightMovement() {
+        Log.i("TerminalFragment", "🎯 ESP32 MOVEMENT: RIGHT detected!");
+        if (ivJump != null) ivJump.setImageResource(R.drawable.stickmanjumpright);
+        jumpRight++;
+        updateJumpLabels();
+        updateLastMovementText("➡️ RIGHT MOVEMENT (ESP32)", "#00FF00");
+        saveJumpDataToAPI();
+        setLEDForRightJump();
+        showToast("Right movement detected! LED: GREEN");
+        
+        // Show flash animation for right movement
+        showMovementFlash(R.drawable.stickmanjumpright);
+    }
+
+    private void handleForwardMovement() {
+        Log.i("TerminalFragment", "🎯 ESP32 MOVEMENT: FORWARD detected!");
+        if (ivJump != null) ivJump.setImageResource(R.drawable.stickmanjumpup);
+        jumpUp++;
+        updateJumpLabels();
+        updateLastMovementText("⬆️ FORWARD MOVEMENT (ESP32)", "#FFFFFF");
+        saveJumpDataToAPI();
+        setLEDForForwardJump();
+        showToast("Forward movement detected! LED: WHITE");
+        
+        // Show flash animation for forward movement
+        showMovementFlash(R.drawable.stickmanjumpup);
+    }
+
+    private void handleBackMovement() {
+        Log.i("TerminalFragment", "🎯 ESP32 MOVEMENT: BACK detected!");
+        if (ivJump != null) ivJump.setImageResource(R.drawable.stickmanjumpup);
+        jumpBack++;
+        updateJumpLabels();
+        updateLastMovementText("⬇️ BACK MOVEMENT (ESP32)", "#FF0000");
+        saveJumpDataToAPI();
+        setLEDForBackJump();
+        showToast("Back movement detected! LED: RED");
+        
+        // Show flash animation for backward movement
+        showMovementFlash(R.drawable.stickmanjumpback);
+    }
+
+    private void showMovementFlash(int imageResource) {
+        if (ivMovementFlash != null) {
+            // Set the image
+            ivMovementFlash.setImageResource(imageResource);
+            
+            // Make it visible
+            ivMovementFlash.setVisibility(View.VISIBLE);
+            
+            // Start the flash animation
+            Animation flashAnimation = AnimationUtils.loadAnimation(getContext(), R.anim.movement_flash);
+            ivMovementFlash.startAnimation(flashAnimation);
+            
+            // Hide after 3 seconds
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                if (ivMovementFlash != null) {
+                    ivMovementFlash.setVisibility(View.GONE);
+                    ivMovementFlash.clearAnimation();
+                }
+            }, 3000);
+        }
+    }
+
     private void status(String str) {
         SpannableStringBuilder spn = new SpannableStringBuilder(str + '\n');
         spn.setSpan(new ForegroundColorSpan(getResources().getColor(R.color.colorStatusText)), 0, spn.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         receiveText.append(spn);
     }
 
-    private boolean gyroEnabled = false;
     private final GyroManager.MovementListener gyroListener = new GyroManager.MovementListener() {
         @Override public void onLeft() {
             Log.i("TerminalFragment", "🎯 GYRO EVENT: LEFT movement detected!");
@@ -626,86 +811,86 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     };
 
     private void toggleGyro() {
-        Activity a = getActivity();
-        if (a instanceof MainActivity) {
-            GyroManager gm = ((MainActivity) a).getGyroManager();
-            if (gm == null || !gm.isAvailable()) {
-                Toast.makeText(a, "Gyroscope not available on this device", Toast.LENGTH_LONG).show();
-                Log.w("TerminalFragment", "Gyroscope not available");
-                return;
-            }
+        // Cycle through: ESP32 → Phone Gyro → Second Phone → ESP32...
+        Log.i("TerminalFragment", "🔄 TOGGLE: Current mode before switch: " + currentSensorMode);
+        switch (currentSensorMode) {
+            case ESP32_ADXL345:
+                // Switch to Primary Phone Gyroscope mode
+                currentSensorMode = SensorMode.PHONE_GYRO;
+                gyroEnabled = true;
+                
+                // Stop ESP32 processing, start phone gyroscope
+                initializePhoneGyroSensors();
+                
+                Toast.makeText(getActivity(), "Switched to Primary Phone Gyroscope", Toast.LENGTH_SHORT).show();
+                Log.i("TerminalFragment", "🔄 Switched to Primary Phone Gyroscope for movement detection");
+                updateLastMovementText("📱 Primary phone gyroscope active", "#FFD700");
+                Log.i("TerminalFragment", "🔄 TOGGLE: Switched to PHONE_GYRO mode");
+                break;
             
-            gyroEnabled = !gyroEnabled;
-            Log.i("TerminalFragment", "Gyro toggled: " + (gyroEnabled ? "ON" : "OFF"));
-            
-            if (gyroEnabled) {
-                gm.setMovementListener(gyroListener);
-                if (tvCalibrationPrompt != null && isAdded()) {
-                    gm.setCalibrationListener(calibrationListener);
+            case PHONE_GYRO:
+                // Switch to Second Phone Gyroscope mode
+                currentSensorMode = SensorMode.SECOND_PHONE_GYRO;
+                gyroEnabled = true;
+                
+                // Stop phone gyroscope
+                if (sensorManager != null && phoneSensorListener != null) {
+                    sensorManager.unregisterListener(phoneSensorListener);
                 }
-                gm.setProcessingEnabled(true);
-                gm.start(); // Start the gyroscope sensor
-                Toast.makeText(a, "Gyroscope enabled - move your device to detect jumps!", Toast.LENGTH_LONG).show();
-                btnGyroToggle.setText("Gyro: ON");
-            } else {
-                gm.setMovementListener(null);
-                gm.setProcessingEnabled(false);
-                gm.stop(); // Stop the gyroscope sensor
-                Toast.makeText(a, "Gyroscope disabled", Toast.LENGTH_SHORT).show();
-                btnGyroToggle.setText("Gyro: OFF");
+                
+                Toast.makeText(getActivity(), "Switched to Second Phone Gyroscope mode", Toast.LENGTH_SHORT).show();
+                Log.i("TerminalFragment", "📱📱 Switched to Second Phone Gyroscope for movement detection");
+                updateLastMovementText("📱📱 Second phone gyroscope movement detection active", "#9C27B0");
+                Log.i("TerminalFragment", "🔄 TOGGLE: Switched to SECOND_PHONE_GYRO mode");
+                break;
+            
+            case SECOND_PHONE_GYRO:
+                // Switch back to ESP32 mode
+                currentSensorMode = SensorMode.ESP32_ADXL345;
+                gyroEnabled = true;
+                
+                Toast.makeText(getActivity(), "Switched to ESP32 ADXL345 mode", Toast.LENGTH_SHORT).show();
+                Log.i("TerminalFragment", "🔧 Switched to ESP32 ADXL345 for movement detection");
+                updateLastMovementText("🔧 ESP32 ADXL345 movement detection active", "#FF5722");
+                Log.i("TerminalFragment", "🔄 TOGGLE: Switched to ESP32_ADXL345 mode");
+                break;
+        }
+        
+        // Update button text and color
+        updateGyroToggleButton();
+    }
+    
+    private void updateGyroToggleButton() {
+        Log.i("TerminalFragment", "🔄 BUTTON UPDATE: Current mode: " + currentSensorMode + ", gyroEnabled: " + gyroEnabled);
+        if (btnGyroToggle != null) {
+            switch (currentSensorMode) {
+                case PHONE_GYRO:
+                    btnGyroToggle.setText("Mode: PHONE " + (gyroEnabled ? "ON" : "OFF"));
+                    btnGyroToggle.setBackgroundColor(gyroEnabled ? 0xFF4CAF50 : 0xFFFF5722);
+                    Log.i("TerminalFragment", "🔄 BUTTON: Set to PHONE mode - " + (gyroEnabled ? "ON" : "OFF"));
+                    break;
+                case SECOND_PHONE_GYRO:
+                    btnGyroToggle.setText("Mode: PHONE2 " + (gyroEnabled ? "ON" : "OFF"));
+                    btnGyroToggle.setBackgroundColor(gyroEnabled ? 0xFF9C27B0 : 0xFFFF5722);
+                    Log.i("TerminalFragment", "🔄 BUTTON: Set to PHONE2 mode - " + (gyroEnabled ? "ON" : "OFF"));
+                    break;
+                case ESP32_ADXL345:
+                default:
+                    btnGyroToggle.setText("Mode: ESP32 " + (connected == Connected.True ? "CONNECTED" : "DISCONNECTED"));
+                    btnGyroToggle.setBackgroundColor(connected == Connected.True ? 0xFF2196F3 : 0xFFFF5722);
+                    Log.i("TerminalFragment", "🔄 BUTTON: Set to ESP32 mode - " + (connected == Connected.True ? "CONNECTED" : "DISCONNECTED"));
+                    break;
             }
-        } else {
-            Toast.makeText(a, "MainActivity not found", Toast.LENGTH_SHORT).show();
-            Log.e("TerminalFragment", "Activity is not MainActivity");
         }
     }
 
     private void initializeGyroAutomatically() {
-        Activity a = getActivity();
-        Log.d("TerminalFragment", "🔧 GYRO INIT: Starting automatic gyroscope initialization...");
+        // DISABLED: Phone gyroscope no longer used - using ESP32 + ADXL345 instead
+        Log.i("TerminalFragment", "�➡️�🔧 Phone gyroscope disabled - using ESP32 + ADXL345 for movement detection");
+        updateLastMovementText("🔧 ESP32 + ADXL345 movement detection active", "#00FFFF");
         
-        if (a instanceof MainActivity) {
-            GyroManager gm = ((MainActivity) a).getGyroManager();
-            Log.d("TerminalFragment", "🔧 GYRO INIT: Activity is MainActivity ✓");
-            Log.d("TerminalFragment", "🔧 GYRO INIT: GyroManager exists: " + (gm != null));
-            
-            if (gm != null) {
-                Log.d("TerminalFragment", "🔧 GYRO INIT: Gyroscope sensor available: " + gm.isAvailable());
-                Log.d("TerminalFragment", "🔧 GYRO INIT: Current gyroEnabled state: " + gyroEnabled);
-                
-                if (gm.isAvailable() && !gyroEnabled) {
-                    Log.i("TerminalFragment", "🔧 GYRO INIT: ✅ All conditions met, enabling gyroscope...");
-                    
-                    // Automatically enable gyroscope when the fragment is created
-                    gyroEnabled = true;
-                    gm.setMovementListener(gyroListener);
-                    if (tvCalibrationPrompt != null && isAdded()) {
-                        gm.setCalibrationListener(calibrationListener);
-                    }
-                    gm.setProcessingEnabled(true);
-                    gm.start(); // ⭐ IMPORTANT: Start the gyroscope sensor
-                    btnGyroToggle.setText("Gyro: ON");
-                    
-                    Log.i("TerminalFragment", "🔧 GYRO INIT: ✅ Gyroscope automatically initialized and enabled");
-                    Log.i("TerminalFragment", "🔧 GYRO INIT: ✅ Movement listener set: " + (gyroListener != null));
-                    Log.i("TerminalFragment", "🔧 GYRO INIT: ✅ Processing enabled: true");
-                    Log.i("TerminalFragment", "🔧 GYRO INIT: ✅ Sensor started: true");
-                    
-                    Toast.makeText(a, "Gyroscope auto-enabled - ready to detect movements!", Toast.LENGTH_SHORT).show();
-                    
-                    // Test LED connection immediately after gyro init
-                    testLEDConnection();
-                } else {
-                    Log.w("TerminalFragment", "🔧 GYRO INIT: ❌ Conditions not met:");
-                    if (!gm.isAvailable()) Log.w("TerminalFragment", "🔧 GYRO INIT: - Gyroscope sensor not available");
-                    if (gyroEnabled) Log.w("TerminalFragment", "🔧 GYRO INIT: - Gyroscope already enabled");
-                }
-            } else {
-                Log.e("TerminalFragment", "🔧 GYRO INIT: ❌ GyroManager is null");
-            }
-        } else {
-            Log.e("TerminalFragment", "🔧 GYRO INIT: ❌ Activity is not MainActivity: " + (a != null ? a.getClass().getSimpleName() : "null"));
-        }
+        // Still test LED connection since ESP32 controls LEDs
+        testLEDConnection();
     }
 
     private void testLEDConnection() {
@@ -860,6 +1045,53 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         }, 6000);
     }
 
+    private void runAccelTestSequence() {
+        Log.i("TerminalFragment", "🧪 Running ESP32 accelerometer data simulation test...");
+        Toast.makeText(getActivity(), "Testing ESP32 Movement Detection...", Toast.LENGTH_SHORT).show();
+        
+        Handler handler = new Handler();
+        
+        // Test LEFT movement
+        handler.postDelayed(() -> {
+            Log.i("TerminalFragment", "🧪 Simulating LEFT movement: ACCEL:3.0,0.5,0.2");
+            processESP32MovementData("ACCEL:3.0,0.5,0.2");
+        }, 500);
+        
+        // Test RIGHT movement  
+        handler.postDelayed(() -> {
+            Log.i("TerminalFragment", "🧪 Simulating RIGHT movement: ACCEL:-3.0,0.5,0.2");
+            processESP32MovementData("ACCEL:-3.0,0.5,0.2");
+        }, 2000);
+        
+        // Test FORWARD movement
+        handler.postDelayed(() -> {
+            Log.i("TerminalFragment", "🧪 Simulating FORWARD movement: ACCEL:0.2,3.0,0.5");
+            processESP32MovementData("ACCEL:0.2,3.0,0.5");
+        }, 3500);
+        
+        // Test BACK movement
+        handler.postDelayed(() -> {
+            Log.i("TerminalFragment", "🧪 Simulating BACK movement: ACCEL:0.2,-3.0,0.5");
+            processESP32MovementData("ACCEL:0.2,-3.0,0.5");
+        }, 5000);
+        
+        // Test direct commands
+        handler.postDelayed(() -> {
+            Log.i("TerminalFragment", "🧪 Testing direct command: MOVE:LEFT (should be BLUE)");
+            processESP32MovementData("MOVE:LEFT");
+        }, 6500);
+        
+        handler.postDelayed(() -> {
+            Log.i("TerminalFragment", "🧪 Testing direct command: MOVE:BACK (should be RED)");
+            processESP32MovementData("MOVE:BACK");
+        }, 8000);
+        
+        handler.postDelayed(() -> {
+            Toast.makeText(getActivity(), "ESP32 Movement Test Complete!", Toast.LENGTH_SHORT).show();
+            Log.i("TerminalFragment", "✅ ESP32 accelerometer simulation test complete");
+        }, 9500);
+    }
+
     private void updateLastMovementText(String movement, String colorHex) {
         if (tvLastMovement != null) {
             tvLastMovement.setText(movement);
@@ -906,8 +1138,8 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
 
     // LED control methods for different jump types and connection status
     private void setLEDForLeftJump() {
-        send("t"); // Topaz/Yellow for left jump
-        Log.d("TerminalFragment", "LED set to YELLOW for left jump");
+        send("b"); // Blue for left jump (since yellow not available)
+        Log.d("TerminalFragment", "LED set to BLUE for left jump");
     }
 
     private void setLEDForRightJump() {
@@ -921,13 +1153,29 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     }
 
     private void setLEDForBackJump() {
-        send("l"); // Lilac/Pink for back jump
-        Log.d("TerminalFragment", "LED set to PINK for back jump");
+        send("r"); // Red for back jump (since pink not available)
+        Log.d("TerminalFragment", "LED set to RED for back jump");
     }
 
+    private boolean isInConnectionLostState = false;
+    
     private void setLEDForConnectionLost() {
-        send("r"); // Red for connection lost
-        Log.d("TerminalFragment", "LED set to RED for connection lost");
+        if (isInConnectionLostState) {
+            Log.d("TerminalFragment", "Already in connection lost state - skipping LED command");
+            return;
+        }
+        
+        isInConnectionLostState = true;
+        try {
+            if (connected == Connected.True && service != null) {
+                send("r"); // Red for connection lost
+                Log.d("TerminalFragment", "LED set to RED for connection lost");
+            } else {
+                Log.d("TerminalFragment", "Cannot send LED command - not connected");
+            }
+        } catch (Exception e) {
+            Log.w("TerminalFragment", "Failed to set LED for connection lost: " + e.getMessage());
+        }
     }
 
     private void sendLEDCommand(String command, String description) {
@@ -1036,7 +1284,11 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     public void onSerialConnect() {
         status("connected");
         connected = Connected.True;
+        isInConnectionLostState = false; // Reset connection lost state
         Log.i("TerminalFragment", "✅ Bluetooth connected successfully");
+        
+        // Update button to show connection status
+        updateGyroToggleButton();
         
         // Save device address for auto-connect
         saveDeviceAddress();
@@ -1097,7 +1349,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         reconnectHandler.removeCallbacks(reconnectRunnable);
         reconnectHandler.postDelayed(reconnectRunnable, 1500);
     }
-
+    
     private void saveJumpDataToAPI() {
         if (auth == null) auth = FirebaseAuth.getInstance();
         FirebaseUser currentUser = auth != null ? auth.getCurrentUser() : null;
@@ -1140,6 +1392,77 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         requireActivity().finish();
         startActivity(intent);
     }
+    
+    private void initializePhoneGyroSensors() {
+        Log.i("TerminalFragment", "📱 Initializing phone gyroscope for movement detection");
+        
+        // Phone Gyroscope initialization logic
+        sensorManager = (SensorManager) requireContext().getSystemService(Context.SENSOR_SERVICE);
+        
+        // Log available sensors
+        if (sensorManager != null) {
+            Log.i("TerminalFragment", "📱 Device has " + sensorManager.getSensorList(Sensor.TYPE_ALL).size() + " sensors total");
+            
+            // Initialize gyroscope
+            gyroSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+            if (gyroSensor != null) {
+                Log.i("TerminalFragment", "🔄 Gyroscope sensor: " + gyroSensor.getName());
+                sensorManager.registerListener(phoneSensorListener, gyroSensor, SensorManager.SENSOR_DELAY_NORMAL);
+                gyroEnabled = true;
+            } else {
+                Log.w("TerminalFragment", "❌ No gyroscope sensor available");
+                Toast.makeText(getActivity(), "No gyroscope sensor available", Toast.LENGTH_SHORT).show();
+            }
+            
+            // Initialize accelerometer for reference
+            accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+            if (accelerometerSensor != null) {
+                Log.i("TerminalFragment", "📐 Accelerometer sensor: " + accelerometerSensor.getName());
+            }
+        }
+        
+        updateLastMovementText("📱 Phone gyroscope initialized", "#FFD700");
+        updateGyroToggleButton();
+        
+        // Test LED connection 
+        testLEDConnection();
+    }
+    
+    // Phone sensor event listener
+    private final SensorEventListener phoneSensorListener = new SensorEventListener() {
+        @Override
+        public void onSensorChanged(SensorEvent event) {
+            if (currentSensorMode != SensorMode.PHONE_GYRO) return;
+            
+            if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
+                float x = event.values[0];
+                float y = event.values[1];
+                float z = event.values[2];
+                
+                // Basic threshold-based movement detection
+                float threshold = 2.0f;
+                
+                if (Math.abs(x) > threshold) {
+                    if (x > 0) {
+                        handleLeftMovement();
+                    } else {
+                        handleRightMovement();
+                    }
+                } else if (Math.abs(y) > threshold) {
+                    if (y > 0) {
+                        handleForwardMovement();
+                    } else {
+                        handleBackMovement();
+                    }
+                }
+            }
+        }
+        
+        @Override
+        public void onAccuracyChanged(Sensor sensor, int accuracy) {
+            // Handle accuracy changes if needed
+        }
+    };
 
 }
 

@@ -3,8 +3,11 @@ package com.example.kineticpulsemobileapp;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -64,6 +67,11 @@ public class LoginScreen extends AppCompatActivity {
         btnGoogleSignIn = findViewById(R.id.btnGoogleSignIn);
         emailEditText = findViewById(R.id.logEmail);
         passwordEditText = findViewById(R.id.logPassword);
+        
+        // Initialize logo and start pulse animation
+        ImageView logoImageView = findViewById(R.id.logoImageView);
+        Animation pulseAnimation = AnimationUtils.loadAnimation(this, R.anim.pulse_animation);
+        logoImageView.startAnimation(pulseAnimation);
 
         // Biometric Authentication setup
         executor = ContextCompat.getMainExecutor(this);
