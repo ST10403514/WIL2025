@@ -1,0 +1,29 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Assemble Debug APK",
+			"type": "shell",
+			"command": "./gradlew",
+			"args": [
+				":app:assembleDebug"
+			],
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Install Debug APK (requires device)",
+			"type": "shell",
+			"command": "./gradlew",
+			"args": [
+				"installDebug"
+			],
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": "build"
+		}
+	]
+}
