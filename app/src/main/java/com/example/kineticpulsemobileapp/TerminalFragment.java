@@ -409,28 +409,28 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         btnJumpLeftSelect.setOnClickListener(v -> {
             selectedMovement = "LEFT";
             isManualModeActive = true;
-            showMovementFlash("mwm_dress_left");
+            showMovementFlash("mwm_dress_left2");
             Toast.makeText(getContext(), "Now perform your LEFT jump!", Toast.LENGTH_SHORT).show();
         });
 
         btnJumpRightSelect.setOnClickListener(v -> {
             selectedMovement = "RIGHT";
             isManualModeActive = true;
-            showMovementFlash("mwm_jump_right");
+            showMovementFlash("mwm_jump_right2");
             Toast.makeText(getContext(), "Now perform your RIGHT jump!", Toast.LENGTH_SHORT).show();
         });
 
         btnJumpUpSelect.setOnClickListener(v -> {
             selectedMovement = "UP";
             isManualModeActive = true;
-            showMovementFlash("mwm_jump_bounce");
+            showMovementFlash("mwm_jump_bounce2");
             Toast.makeText(getContext(), "Now perform your UP jump!", Toast.LENGTH_SHORT).show();
         });
 
         btnJumpFrontSelect.setOnClickListener(v -> {
             selectedMovement = "FORWARD";
             isManualModeActive = true;
-            showMovementFlash("mwm_jump_bounce");
+            showMovementFlash("mwm_jump_bounce2");
             Toast.makeText(getContext(), "Now perform your FORWARD jump!", Toast.LENGTH_SHORT).show();
         });
 
@@ -740,7 +740,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         showToast("Left movement detected! LED: BLUE");
 
         // Show flash animation for left movement using your GIF/WebP
-        showMovementFlash("mwm_dress_left");
+        showMovementFlash("mwm_dress_left2");
         speakIfProd("Left movement detected");
     }
 
@@ -755,7 +755,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         showToast("Right movement detected! LED: GREEN");
 
         // Show flash animation for right movement using your GIF/WebP
-        showMovementFlash("mwm_jump_right");
+        showMovementFlash("mwm_jump_right2");
         speakIfProd("Right movement detected");
     }
 
@@ -770,7 +770,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         showToast("Forward movement detected! LED: WHITE");
 
         // Show flash animation for forward movement using your GIF/WebP
-        showMovementFlash("mwm_jump_bounce");
+        showMovementFlash("mwm_jump_bounce2");
         speakIfProd("Forward movement detected");
     }
 
@@ -785,7 +785,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         showToast("Back movement detected! LED: RED");
 
         // Show flash animation for back movement using your GIF/WebP
-        showMovementFlash("mwm_jump_bounce"); // Reusing the bounce GIF for back movement
+        showMovementFlash("mwm_jump_bounce2"); // Reusing the bounce GIF for back movement
         speakIfProd("Back movement detected");
     }
 
@@ -827,7 +827,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             saveJumpDataToAPI();
             setLEDForLeftJump(); // Set LED to YELLOW
             showToast("Left jump detected! LED: YELLOW");
-            showMovementFlash("mwm_dress_left");
+            showMovementFlash("mwm_dress_left2");
             speakIfProd("Left movement detected");
 
 // confirm user-selected movement (if any)
@@ -846,7 +846,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             saveJumpDataToAPI();
             setLEDForRightJump(); // Set LED to GREEN
             showToast("Right jump detected! LED: GREEN");
-            showMovementFlash("mwm_jump_right");
+            showMovementFlash("mwm_jump_right2");
             speakIfProd("Right movement detected");
 
             // confirm user-selected movement (if any)
@@ -865,7 +865,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             saveJumpDataToAPI();
             setLEDForForwardJump(); // Set LED to WHITE
             showToast("Up jump detected! LED: WHITE");
-            showMovementFlash("mwm_jump_bounce");
+            showMovementFlash("mwm_jump_bounce2");
             speakIfProd("Forward movement detected");
 
             // confirm user-selected movement (if any)
@@ -885,7 +885,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             saveJumpDataToAPI();
             setLEDForBackJump(); // Set LED to PINK
             showToast("Back jump detected! LED: PINK");
-            showMovementFlash("mwm_jump_bounce"); // Reusing bounce GIF
+            showMovementFlash("mwm_jump_bounce2"); // Reusing bounce GIF
             speakIfProd("Back movement detected");
 
             // confirm user-selected movement (if any)
