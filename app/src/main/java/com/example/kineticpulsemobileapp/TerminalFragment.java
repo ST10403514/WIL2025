@@ -36,6 +36,8 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.Switch;
+import android.speech.tts.TextToSpeech;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -106,6 +108,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
 
     private Button btnLogin;
     private Button btnGyroToggle;
+    private Switch switchMode; // Debug-only Dev/Prod toggle
 
     private Button btnJumpUp;
 
@@ -134,6 +137,12 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     
     private TextView tvCalibrationPrompt;
     
+    // Mode + TTS
+    private static final String PREFS_APP = "AppPrefs";
+    private static final String PREF_PROD_MODE = "prod_mode";
+    private boolean isProductionMode = true; // default
+    private TextToSpeech tts;
+    
     // Auto-connect functionality
     private static final String PREFS_NAME = "BluetoothPrefs";
     private static final String PREF_DEVICE_ADDRESS = "saved_device_address";
@@ -155,6 +164,10 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
 
     @Override
     public void onDestroy() {
+        if (tts != null) {
+            try { tts.stop(); } catch (Exception ignored) {}
+            try { tts.shutdown(); } catch (Exception ignored) {}
+        }
         if (connected != Connected.False) disconnect();
         Activity a = getActivity();
         if (a != null) a.stopService(new Intent(a, SerialService.class));
@@ -271,7 +284,8 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         //LED Buttons-----------------------
 
         btnLogin = view.findViewById(R.id.btnLogin);
-        btnGyroToggle = view.findViewById(R.id.btnGyroToggle);
+    btnGyroToggle = view.findViewById(R.id.btnGyroToggle);
+    switchMode = view.findViewById(R.id.switchMode);
         ivJump = view.findViewById(R.id.ivJump);
         ivMovementFlash = view.findViewById(R.id.ivMovementFlash);
         showView = view.findViewById(R.id.showView);
@@ -356,8 +370,11 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
 
         btnGyroToggle.setOnClickListener(v -> toggleGyro());
         
-        // Initialize sensor mode button text
-        updateGyroToggleButton();
+    // Initialize sensor mode button text
+    updateGyroToggleButton();
+    // Initialize mode switch (debug-only) and TTS
+    initModeSwitch(view.getContext());
+    initTts(view.getContext());
         
         // Check if gyroscope is available and show status
         Activity activity = getActivity();
@@ -647,6 +664,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         
         // Show flash animation for left movement
         showMovementFlash(R.drawable.stickmanjumpleft);
+        speakIfProd("Left movement detected");
     }
 
     private void handleRightMovement() {
@@ -661,6 +679,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         
         // Show flash animation for right movement
         showMovementFlash(R.drawable.stickmanjumpright);
+        speakIfProd("Right movement detected");
     }
 
     private void handleForwardMovement() {
@@ -675,6 +694,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         
         // Show flash animation for forward movement
         showMovementFlash(R.drawable.stickmanjumpup);
+        speakIfProd("Forward movement detected");
     }
 
     private void handleBackMovement() {
@@ -689,6 +709,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         
         // Show flash animation for backward movement
         showMovementFlash(R.drawable.stickmanjumpback);
+        speakIfProd("Back movement detected");
     }
 
     private void showMovementFlash(int imageResource) {
@@ -729,6 +750,8 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             saveJumpDataToAPI();
             setLEDForLeftJump(); // Set LED to YELLOW
             showToast("Left jump detected! LED: YELLOW");
+            showMovementFlash(R.drawable.stickmanjumpleft);
+            speakIfProd("Left movement detected");
         }
         @Override public void onRight() {
             Log.i("TerminalFragment", "🎯 GYRO EVENT: RIGHT movement detected!");
@@ -739,6 +762,8 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             saveJumpDataToAPI();
             setLEDForRightJump(); // Set LED to GREEN
             showToast("Right jump detected! LED: GREEN");
+            showMovementFlash(R.drawable.stickmanjumpright);
+            speakIfProd("Right movement detected");
         }
         @Override public void onMiddle() {
             Log.i("TerminalFragment", "🎯 GYRO EVENT: FORWARD movement detected!");
@@ -749,6 +774,8 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             saveJumpDataToAPI();
             setLEDForForwardJump(); // Set LED to WHITE
             showToast("Up jump detected! LED: WHITE");
+            showMovementFlash(R.drawable.stickmanjumpup);
+            speakIfProd("Forward movement detected");
         }
         @Override public void onBack() {
             Log.i("TerminalFragment", "🎯 GYRO EVENT: BACK movement detected!");
@@ -759,6 +786,8 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             saveJumpDataToAPI();
             setLEDForBackJump(); // Set LED to PINK
             showToast("Back jump detected! LED: PINK");
+            showMovementFlash(R.drawable.stickmanjumpback);
+            speakIfProd("Back movement detected");
         }
         @Override public void onRaw(float x, float y, float z) {
             // Log raw gyroscope data periodically to verify sensor is working
@@ -881,6 +910,50 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
                     Log.i("TerminalFragment", "🔄 BUTTON: Set to ESP32 mode - " + (connected == Connected.True ? "CONNECTED" : "DISCONNECTED"));
                     break;
             }
+        }
+    }
+
+    private void initModeSwitch(Context context) {
+        // Hide in release builds
+        if (switchMode == null) return;
+        if (!BuildConfig.DEBUG) {
+            switchMode.setVisibility(View.GONE);
+            return;
+        }
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_APP, Context.MODE_PRIVATE);
+        isProductionMode = prefs.getBoolean(PREF_PROD_MODE, true);
+        switchMode.setChecked(isProductionMode);
+        switchMode.setText(isProductionMode ? "Production Mode" : "Development Mode");
+        switchMode.setOnCheckedChangeListener((btn, checked) -> {
+            isProductionMode = checked;
+            btn.setText(checked ? "Production Mode" : "Development Mode");
+            prefs.edit().putBoolean(PREF_PROD_MODE, checked).apply();
+            Toast.makeText(context, checked ? "Production mode ON" : "Development mode ON", Toast.LENGTH_SHORT).show();
+        });
+    }
+
+    private void initTts(Context context) {
+        tts = new TextToSpeech(context, status -> {
+            if (status == TextToSpeech.SUCCESS) {
+                try {
+                    tts.setLanguage(java.util.Locale.getDefault());
+                } catch (Exception e) {
+                    Log.w("TerminalFragment", "TTS language set failed: " + e.getMessage());
+                }
+            } else {
+                Log.w("TerminalFragment", "TTS init failed with status " + status);
+            }
+        });
+    }
+
+    private void speakIfProd(String phrase) {
+        if (!isProductionMode) return;
+        try {
+            if (tts != null) {
+                tts.speak(phrase, TextToSpeech.QUEUE_FLUSH, null, "motion-" + System.currentTimeMillis());
+            }
+        } catch (Exception e) {
+            Log.w("TerminalFragment", "TTS speak failed: " + e.getMessage());
         }
     }
 

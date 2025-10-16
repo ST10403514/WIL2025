@@ -24,6 +24,14 @@
             android:text="Login"
             android:layout_marginEnd="8dp" />
 
+        <!-- Debug-only: Dev/Prod mode toggle (visibility set in code) -->
+        <Switch
+            android:id="@+id/switchMode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Production Mode"
+            android:layout_marginEnd="8dp" />
+
         <Button
             android:id="@+id/btnGyroToggle"
             android:layout_width="wrap_content"
