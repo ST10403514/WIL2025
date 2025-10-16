@@ -47,6 +47,10 @@ import android.content.pm.PackageManager;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+
+
 
 import java.util.ArrayDeque;
 import java.util.Arrays;
@@ -483,6 +487,13 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             onSerialConnectError(e);
         }
     }
+    private void status(String str) {
+        if (receiveText != null) {
+            SpannableStringBuilder spn = new SpannableStringBuilder(str + '\n');
+            spn.setSpan(new ForegroundColorSpan(getResources().getColor(R.color.colorStatusText)), 0, spn.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            receiveText.append(spn);
+        }
+    }
 
     private void disconnect() {
         connected = Connected.False;
@@ -654,144 +665,138 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     // ===== MOVEMENT HANDLERS =====
     private void handleLeftMovement() {
         Log.i("TerminalFragment", "🎯 ESP32 MOVEMENT: LEFT detected!");
-        if (ivJump != null) ivJump.setImageResource(R.drawable.stickmanjumpleft);
         jumpLeft++;
         updateJumpLabels();
         updateLastMovementText("⬅️ LEFT MOVEMENT (ESP32)", "#0000FF");
         saveJumpDataToAPI();
         setLEDForLeftJump();
         showToast("Left movement detected! LED: BLUE");
-        
-        // Show flash animation for left movement
-        showMovementFlash(R.drawable.stickmanjumpleft);
+
+        // Show flash animation for left movement using your GIF/WebP
+        showMovementFlash("mwm_dress_left");
         speakIfProd("Left movement detected");
     }
 
     private void handleRightMovement() {
         Log.i("TerminalFragment", "🎯 ESP32 MOVEMENT: RIGHT detected!");
-        if (ivJump != null) ivJump.setImageResource(R.drawable.stickmanjumpright);
         jumpRight++;
         updateJumpLabels();
         updateLastMovementText("➡️ RIGHT MOVEMENT (ESP32)", "#00FF00");
         saveJumpDataToAPI();
         setLEDForRightJump();
         showToast("Right movement detected! LED: GREEN");
-        
-        // Show flash animation for right movement
-        showMovementFlash(R.drawable.stickmanjumpright);
+
+        // Show flash animation for right movement using your GIF/WebP
+        showMovementFlash("mwm_jump_right");
         speakIfProd("Right movement detected");
     }
 
     private void handleForwardMovement() {
         Log.i("TerminalFragment", "🎯 ESP32 MOVEMENT: FORWARD detected!");
-        if (ivJump != null) ivJump.setImageResource(R.drawable.stickmanjumpup);
         jumpUp++;
         updateJumpLabels();
         updateLastMovementText("⬆️ FORWARD MOVEMENT (ESP32)", "#FFFFFF");
         saveJumpDataToAPI();
         setLEDForForwardJump();
         showToast("Forward movement detected! LED: WHITE");
-        
-        // Show flash animation for forward movement
-        showMovementFlash(R.drawable.stickmanjumpup);
+
+        // Show flash animation for forward movement using your GIF/WebP
+        showMovementFlash("mwm_jump_bounce");
         speakIfProd("Forward movement detected");
     }
 
     private void handleBackMovement() {
         Log.i("TerminalFragment", "🎯 ESP32 MOVEMENT: BACK detected!");
-        if (ivJump != null) ivJump.setImageResource(R.drawable.stickmanjumpup);
         jumpBack++;
         updateJumpLabels();
         updateLastMovementText("⬇️ BACK MOVEMENT (ESP32)", "#FF0000");
         saveJumpDataToAPI();
         setLEDForBackJump();
         showToast("Back movement detected! LED: RED");
-        
-        // Show flash animation for backward movement
-        showMovementFlash(R.drawable.stickmanjumpback);
+
+        // Show flash animation for back movement using your GIF/WebP
+        showMovementFlash("mwm_jump_bounce"); // Reusing the bounce GIF for back movement
         speakIfProd("Back movement detected");
     }
 
-    private void showMovementFlash(int imageResource) {
-        if (ivMovementFlash != null) {
-            // Set the image
-            ivMovementFlash.setImageResource(imageResource);
-            
-            // Make it visible
-            ivMovementFlash.setVisibility(View.VISIBLE);
-            
-            // Start the flash animation
-            Animation flashAnimation = AnimationUtils.loadAnimation(getContext(), R.anim.movement_flash);
-            ivMovementFlash.startAnimation(flashAnimation);
-            
-            // Hide after 3 seconds
-            new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                if (ivMovementFlash != null) {
-                    ivMovementFlash.setVisibility(View.GONE);
-                    ivMovementFlash.clearAnimation();
-                }
-            }, 3000);
+    // ===== showMovementFlash =====
+    private void showMovementFlash(String fileName) {
+        if (ivMovementFlash != null && getContext() != null) {
+            // Get resource ID from raw folder
+            int resId = getResources().getIdentifier(fileName, "raw", getContext().getPackageName());
+
+            if (resId != 0) {
+                // Use Glide to load the animation (handles both GIF and WebP)
+                Glide.with(this)
+                        .load(resId)
+                        .diskCacheStrategy(DiskCacheStrategy.NONE)
+                        .into(ivMovementFlash);
+
+                ivMovementFlash.setVisibility(View.VISIBLE);
+
+                // Hide after 3 seconds
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    if (ivMovementFlash != null) {
+                        ivMovementFlash.setVisibility(View.GONE);
+                    }
+                }, 3000);
+            } else {
+                Log.e("TerminalFragment", "❌ Animation resource not found: " + fileName);
+            }
         }
     }
 
-    private void status(String str) {
-        SpannableStringBuilder spn = new SpannableStringBuilder(str + '\n');
-        spn.setSpan(new ForegroundColorSpan(getResources().getColor(R.color.colorStatusText)), 0, spn.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        receiveText.append(spn);
-    }
-
+    // ===== Gyro Listener =====
     private final GyroManager.MovementListener gyroListener = new GyroManager.MovementListener() {
         @Override public void onLeft() {
             Log.i("TerminalFragment", "🎯 GYRO EVENT: LEFT movement detected!");
-            if (ivJump != null) ivJump.setImageResource(R.drawable.stickmanjumpleft);
             jumpLeft++;
             updateJumpLabels();
             updateLastMovementText("⬅️ LEFT MOVEMENT DETECTED", "#FFD700");
             saveJumpDataToAPI();
             setLEDForLeftJump(); // Set LED to YELLOW
             showToast("Left jump detected! LED: YELLOW");
-            showMovementFlash(R.drawable.stickmanjumpleft);
+            showMovementFlash("mwm_dress_left");
             speakIfProd("Left movement detected");
         }
         @Override public void onRight() {
             Log.i("TerminalFragment", "🎯 GYRO EVENT: RIGHT movement detected!");
-            if (ivJump != null) ivJump.setImageResource(R.drawable.stickmanjumpright);
             jumpRight++;
             updateJumpLabels();
             updateLastMovementText("➡️ RIGHT MOVEMENT DETECTED", "#00FF00");
             saveJumpDataToAPI();
             setLEDForRightJump(); // Set LED to GREEN
             showToast("Right jump detected! LED: GREEN");
-            showMovementFlash(R.drawable.stickmanjumpright);
+            showMovementFlash("mwm_jump_right");
             speakIfProd("Right movement detected");
         }
         @Override public void onMiddle() {
             Log.i("TerminalFragment", "🎯 GYRO EVENT: FORWARD movement detected!");
-            if (ivJump != null) ivJump.setImageResource(R.drawable.stickmanjumpup);
             jumpUp++;
             updateJumpLabels();
             updateLastMovementText("⬆️ FORWARD MOVEMENT DETECTED", "#FFFFFF");
             saveJumpDataToAPI();
             setLEDForForwardJump(); // Set LED to WHITE
             showToast("Up jump detected! LED: WHITE");
-            showMovementFlash(R.drawable.stickmanjumpup);
+            showMovementFlash("mwm_jump_bounce");
             speakIfProd("Forward movement detected");
         }
         @Override public void onBack() {
             Log.i("TerminalFragment", "🎯 GYRO EVENT: BACK movement detected!");
-            if (ivJump != null) ivJump.setImageResource(R.drawable.stickmanjumpup);
             jumpBack++;
             updateJumpLabels();
             updateLastMovementText("⬇️ BACK MOVEMENT DETECTED", "#FF69B4");
             saveJumpDataToAPI();
             setLEDForBackJump(); // Set LED to PINK
             showToast("Back jump detected! LED: PINK");
-            showMovementFlash(R.drawable.stickmanjumpback);
+            showMovementFlash("mwm_jump_bounce"); // Reusing bounce GIF
             speakIfProd("Back movement detected");
         }
-        @Override public void onRaw(float x, float y, float z) {
+
+        @Override
+        public void onRaw(float x, float y, float z) {
             // Log raw gyroscope data periodically to verify sensor is working
-            if (System.currentTimeMillis() % 5000 < 50) { // Log every ~5 seconds (reduced frequency for better performance)
+            if (System.currentTimeMillis() % 5000 < 50) {
                 Log.d("TerminalFragment", String.format("🔄 GYRO RAW: x=%.3f y=%.3f z=%.3f", x, y, z));
             }
         }
@@ -1045,13 +1050,15 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         Log.i("TerminalFragment", "🔍 Bluetooth connected: " + (connected == Connected.True));
         Log.i("TerminalFragment", "🔍 Service available: " + (service != null));
         
+
         // Test 3: Try to manually trigger a gyro event
         if (gyroEnabled) {
             Log.i("TerminalFragment", "🧪 Manually triggering left jump...");
-            if (ivJump != null) ivJump.setImageResource(R.drawable.stickmanjumpleft);
+
             jumpLeft++;
             updateJumpLabels();
             setLEDForLeftJump();
+            showMovementFlash("mwm_dress_left"); // Use your new animation instead
             Toast.makeText(a, "Manual left jump triggered!", Toast.LENGTH_SHORT).show();
         }
         
@@ -1196,12 +1203,13 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     // Test method to manually trigger jump animations (for debugging)
     private void testJumpAnimations() {
         Log.d("TerminalFragment", "Testing jump animations");
-        
+
         // Test left jump
-        ivJump.setImageResource(R.drawable.stickmanjumpleft);
+
         jumpLeft++;
         updateJumpLabels();
-        
+        showMovementFlash("mwm_dress_left"); // Use your new animation instead
+
         // You can call this method to test if the UI updates work
         Activity a = getActivity();
         if (a != null) {
