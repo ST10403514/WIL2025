@@ -4,63 +4,68 @@
     android:height="100dp"
     android:viewportWidth="100"
     android:viewportHeight="100">
-    
-    <!-- Stick figure jumping backward -->
-    <!-- Head -->
-    <circle
+
+    <!-- Head (circle as path) -->
+    <path
         android:fillColor="#FFFFFF"
         android:strokeColor="#000000"
         android:strokeWidth="2"
-        android:cx="50"
-        android:cy="20"
-        android:r="8" />
-    
+        android:pathData="M50,20 m -8,0 a 8,8 0 1,0 16,0 a 8,8 0 1,0 -16,0" />
+
     <!-- Body -->
     <path
+        android:fillColor="#00000000"
         android:strokeColor="#000000"
         android:strokeWidth="3"
         android:strokeLineCap="round"
         android:pathData="M50,28 L50,60" />
-    
+
     <!-- Arms (reaching backward) -->
     <path
+        android:fillColor="#00000000"
         android:strokeColor="#000000"
         android:strokeWidth="3"
         android:strokeLineCap="round"
         android:pathData="M50,35 L35,25" />
     <path
+        android:fillColor="#00000000"
         android:strokeColor="#000000"
         android:strokeWidth="3"
         android:strokeLineCap="round"
         android:pathData="M50,35 L35,30" />
-    
+
     <!-- Legs (jumping backward motion) -->
     <path
+        android:fillColor="#00000000"
         android:strokeColor="#000000"
         android:strokeWidth="3"
         android:strokeLineCap="round"
         android:pathData="M50,60 L35,80" />
     <path
+        android:fillColor="#00000000"
         android:strokeColor="#000000"
         android:strokeWidth="3"
         android:strokeLineCap="round"
         android:pathData="M50,60 L40,85" />
-    
+
     <!-- Motion lines to show backward movement -->
     <path
+        android:fillColor="#00000000"
         android:strokeColor="#666666"
         android:strokeWidth="2"
         android:strokeLineCap="round"
         android:pathData="M70,25 L85,25" />
     <path
+        android:fillColor="#00000000"
         android:strokeColor="#666666"
         android:strokeWidth="2"
         android:strokeLineCap="round"
         android:pathData="M70,30 L85,30" />
     <path
+        android:fillColor="#00000000"
         android:strokeColor="#666666"
         android:strokeWidth="2"
         android:strokeLineCap="round"
         android:pathData="M70,35 L85,35" />
-    
+
 </vector>

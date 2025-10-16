@@ -11,43 +11,64 @@
 
     <!-- Header Controls -->
     <LinearLayout
+        android:id="@+id/headerControls"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
+        android:orientation="vertical"
         android:layout_marginBottom="16dp">
 
-        <Button
-            android:id="@+id/btnLogin"
-            android:layout_width="wrap_content"
+        <TextView
+            android:id="@+id/tvHeaderTitle"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Login"
-            android:layout_marginEnd="8dp" />
+            android:text="Movement Monitor"
+            android:textColor="@color/white"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:layout_marginBottom="8dp" />
 
-        <!-- Debug-only: Dev/Prod mode toggle (visibility set in code) -->
-        <Switch
-            android:id="@+id/switchMode"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Production Mode"
-            android:layout_marginEnd="8dp" />
+            android:orientation="horizontal"
+            android:gravity="center">
 
-        <Button
-            android:id="@+id/btnGyroToggle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Gyro: OFF"
-            android:layout_marginEnd="8dp" />
+            <Switch
+                android:id="@+id/switchMode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Production Mode"
+                android:layout_marginEnd="12dp" />
 
-        <Button
-            android:id="@+id/hideLEDView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="LED" />
+            <Button
+                android:id="@+id/btnGyroToggle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Sensor: ESP32"
+                android:background="@drawable/modern_button_primary"
+                android:layout_marginEnd="12dp" />
+
+            <Button
+                android:id="@+id/hideLEDView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Lights"
+                android:background="@drawable/modern_button_secondary"
+                android:layout_marginEnd="12dp" />
+
+            <Button
+                android:id="@+id/btnLogin"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Login"
+                android:background="@drawable/modern_button_secondary" />
+        </LinearLayout>
     </LinearLayout>
 
     <!-- Motion Detection Display -->
     <LinearLayout
+        android:id="@+id/motionStatus"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
@@ -188,6 +209,7 @@
 
     <!-- Flash Animation Area -->
     <FrameLayout
+        android:id="@+id/movementContainer"
         android:layout_width="match_parent"
         android:layout_height="150dp"
         android:layout_marginBottom="16dp"
@@ -195,6 +217,7 @@
         android:padding="16dp">
 
         <TextView
+            android:id="@+id/tvMovementHeader"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="🏃 Movement Animation"
@@ -214,6 +237,25 @@
             android:visibility="gone"
             android:background="#33FFFFFF"
             android:padding="8dp" />
+
+        <!-- Production overlay for movement counts -->
+        <TextView
+            android:id="@+id/tvProdCounts"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|end"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:background="#66000000"
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:text="L: 0  R: 0  F: 0  B: 0"
+            android:visibility="gone" />
 
     </FrameLayout>
 
@@ -335,6 +377,7 @@
 
     <!-- Communication Section -->
     <LinearLayout
+        android:id="@+id/commSection"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
