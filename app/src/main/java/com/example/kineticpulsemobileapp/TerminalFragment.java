@@ -33,13 +33,11 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.LinearLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.Switch;
 import android.speech.tts.TextToSpeech;
-import com.bumptech.glide.Glide;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -48,6 +46,10 @@ import android.content.pm.PackageManager;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+
 
 
 import java.util.ArrayDeque;
@@ -60,7 +62,7 @@ import retrofit2.Response;
 public class TerminalFragment extends Fragment implements ServiceConnection, SerialListener {
 
     private enum Connected { False, Pending, True }
-    private enum SensorMode { PHONE_GYRO, ESP32_ADXL345 }
+    private enum SensorMode { PHONE_GYRO, ESP32_ADXL345, SECOND_PHONE_GYRO }
     
     private FirebaseAuth auth;
     private String deviceAddress;
@@ -124,15 +126,8 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
 
     private View showView;
 
-    // Layout groups for mode-based visibility
-    private View headerControls;
-    private View motionStatus;
-    private View movementContainer;
-    private View commSection;
-
     private ImageView ivJump;
     private ImageView ivMovementFlash;
-    private TextView tvProdCounts;
 
     private TextView tvJumpLeft;
 
@@ -295,13 +290,8 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         btnLogin = view.findViewById(R.id.btnLogin);
     btnGyroToggle = view.findViewById(R.id.btnGyroToggle);
     switchMode = view.findViewById(R.id.switchMode);
-    headerControls = view.findViewById(R.id.headerControls);
-    motionStatus = view.findViewById(R.id.motionStatus);
-    movementContainer = view.findViewById(R.id.movementContainer);
-    commSection = view.findViewById(R.id.commSection);
-    ivJump = view.findViewById(R.id.ivJump);
-    ivMovementFlash = view.findViewById(R.id.ivMovementFlash);
-    tvProdCounts = view.findViewById(R.id.tvProdCounts);
+        ivJump = view.findViewById(R.id.ivJump);
+        ivMovementFlash = view.findViewById(R.id.ivMovementFlash);
         showView = view.findViewById(R.id.showView);
         hideView = view.findViewById(R.id.hideView);
         buttonsView = view.findViewById(R.id.buttonsView);
@@ -388,7 +378,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     updateGyroToggleButton();
     // Initialize mode switch (debug-only) and TTS
     initModeSwitch(view.getContext());
-    applyUiMode();
     initTts(view.getContext());
         
         // Check if gyroscope is available and show status
@@ -496,6 +485,13 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             service.connect(socket);
         } catch (Exception e) {
             onSerialConnectError(e);
+        }
+    }
+    private void status(String str) {
+        if (receiveText != null) {
+            SpannableStringBuilder spn = new SpannableStringBuilder(str + '\n');
+            spn.setSpan(new ForegroundColorSpan(getResources().getColor(R.color.colorStatusText)), 0, spn.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            receiveText.append(spn);
         }
     }
 
@@ -669,174 +665,138 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     // ===== MOVEMENT HANDLERS =====
     private void handleLeftMovement() {
         Log.i("TerminalFragment", "🎯 ESP32 MOVEMENT: LEFT detected!");
-        if (ivJump != null) ivJump.setImageResource(R.drawable.stickmanjumpleft);
         jumpLeft++;
         updateJumpLabels();
         updateLastMovementText("⬅️ LEFT MOVEMENT (ESP32)", "#0000FF");
         saveJumpDataToAPI();
         setLEDForLeftJump();
         showToast("Left movement detected! LED: BLUE");
-        
-        // Show flash animation for left movement
-        showMovementFlash(R.drawable.stickmanjumpleft);
+
+        // Show flash animation for left movement using your GIF/WebP
+        showMovementFlash("mwm_dress_left");
         speakIfProd("Left movement detected");
     }
 
     private void handleRightMovement() {
         Log.i("TerminalFragment", "🎯 ESP32 MOVEMENT: RIGHT detected!");
-        if (ivJump != null) ivJump.setImageResource(R.drawable.stickmanjumpright);
         jumpRight++;
         updateJumpLabels();
         updateLastMovementText("➡️ RIGHT MOVEMENT (ESP32)", "#00FF00");
         saveJumpDataToAPI();
         setLEDForRightJump();
         showToast("Right movement detected! LED: GREEN");
-        
-        // Show flash animation for right movement
-        showMovementFlash(R.drawable.stickmanjumpright);
+
+        // Show flash animation for right movement using your GIF/WebP
+        showMovementFlash("mwm_jump_right");
         speakIfProd("Right movement detected");
     }
 
     private void handleForwardMovement() {
         Log.i("TerminalFragment", "🎯 ESP32 MOVEMENT: FORWARD detected!");
-        if (ivJump != null) ivJump.setImageResource(R.drawable.stickmanjumpup);
         jumpUp++;
         updateJumpLabels();
         updateLastMovementText("⬆️ FORWARD MOVEMENT (ESP32)", "#FFFFFF");
         saveJumpDataToAPI();
         setLEDForForwardJump();
         showToast("Forward movement detected! LED: WHITE");
-        
-        // Show flash animation for forward movement
-        showMovementFlash(R.drawable.stickmanjumpup);
+
+        // Show flash animation for forward movement using your GIF/WebP
+        showMovementFlash("mwm_jump_bounce");
         speakIfProd("Forward movement detected");
     }
 
     private void handleBackMovement() {
         Log.i("TerminalFragment", "🎯 ESP32 MOVEMENT: BACK detected!");
-        if (ivJump != null) ivJump.setImageResource(R.drawable.stickmanjumpup);
         jumpBack++;
         updateJumpLabels();
         updateLastMovementText("⬇️ BACK MOVEMENT (ESP32)", "#FF0000");
         saveJumpDataToAPI();
         setLEDForBackJump();
         showToast("Back movement detected! LED: RED");
-        
-        // Show flash animation for backward movement
-        showMovementFlash(R.drawable.stickmanjumpback);
+
+        // Show flash animation for back movement using your GIF/WebP
+        showMovementFlash("mwm_jump_bounce"); // Reusing the bounce GIF for back movement
         speakIfProd("Back movement detected");
     }
 
-    private void showMovementFlash(int imageResource) {
-        if (ivMovementFlash == null) return;
-        Context ctx = getContext();
-        if (ctx == null) return;
+    // ===== showMovementFlash =====
+    private void showMovementFlash(String fileName) {
+        if (ivMovementFlash != null && getContext() != null) {
+            // Get resource ID from raw folder
+            int resId = getResources().getIdentifier(fileName, "raw", getContext().getPackageName());
 
-        // Default: fallback to drawable resource
-        try {
-            ivMovementFlash.clearAnimation();
-            ivMovementFlash.setVisibility(View.VISIBLE);
-            // Use Glide only for GIF-capable sources; else fallback to drawable
-            // Map resource to asset GIF name when available
-            String assetPath = null;
-            if (imageResource == R.drawable.stickmanjumpleft) {
-                assetPath = "file:///android_asset/images/mwm_dress_left.gif";
-            } else if (imageResource == R.drawable.stickmanjumpright) {
-                assetPath = "file:///android_asset/images/mwm_jump_right.gif";
-            } else if (imageResource == R.drawable.stickmanjumpup) {
-                assetPath = "file:///android_asset/images/mwm_jump_bounce.gif";
-            } else if (imageResource == R.drawable.stickmanjumpback) {
-                // no dedicated back GIF; reuse bounce as a subtle effect
-                assetPath = "file:///android_asset/images/mwm_jump_bounce.gif";
-            }
-
-            if (assetPath != null) {
-                Glide.with(ctx)
-                        .asGif()
-                        .load(assetPath)
+            if (resId != 0) {
+                // Use Glide to load the animation (handles both GIF and WebP)
+                Glide.with(this)
+                        .load(resId)
+                        .diskCacheStrategy(DiskCacheStrategy.NONE)
                         .into(ivMovementFlash);
-            } else {
-                ivMovementFlash.setImageResource(imageResource);
-            }
 
-            Animation flashAnimation = AnimationUtils.loadAnimation(ctx, R.anim.movement_flash);
-            ivMovementFlash.startAnimation(flashAnimation);
-
-            new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                if (ivMovementFlash != null) {
-                    ivMovementFlash.setVisibility(View.GONE);
-                    ivMovementFlash.clearAnimation();
-                }
-            }, 3000);
-        } catch (Exception e) {
-            Log.w("TerminalFragment", "Failed to show movement GIF, fallback to drawable: " + e.getMessage());
-            try {
-                ivMovementFlash.setImageResource(imageResource);
                 ivMovementFlash.setVisibility(View.VISIBLE);
-                Animation flashAnimation = AnimationUtils.loadAnimation(ctx, R.anim.movement_flash);
-                ivMovementFlash.startAnimation(flashAnimation);
-            } catch (Exception ignored) { }
+
+                // Hide after 3 seconds
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    if (ivMovementFlash != null) {
+                        ivMovementFlash.setVisibility(View.GONE);
+                    }
+                }, 3000);
+            } else {
+                Log.e("TerminalFragment", "❌ Animation resource not found: " + fileName);
+            }
         }
     }
 
-    private void status(String str) {
-        SpannableStringBuilder spn = new SpannableStringBuilder(str + '\n');
-        spn.setSpan(new ForegroundColorSpan(getResources().getColor(R.color.colorStatusText)), 0, spn.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        receiveText.append(spn);
-    }
-
+    // ===== Gyro Listener =====
     private final GyroManager.MovementListener gyroListener = new GyroManager.MovementListener() {
         @Override public void onLeft() {
             Log.i("TerminalFragment", "🎯 GYRO EVENT: LEFT movement detected!");
-            if (ivJump != null) ivJump.setImageResource(R.drawable.stickmanjumpleft);
             jumpLeft++;
             updateJumpLabels();
             updateLastMovementText("⬅️ LEFT MOVEMENT DETECTED", "#FFD700");
             saveJumpDataToAPI();
             setLEDForLeftJump(); // Set LED to YELLOW
             showToast("Left jump detected! LED: YELLOW");
-            showMovementFlash(R.drawable.stickmanjumpleft);
+            showMovementFlash("mwm_dress_left");
             speakIfProd("Left movement detected");
         }
         @Override public void onRight() {
             Log.i("TerminalFragment", "🎯 GYRO EVENT: RIGHT movement detected!");
-            if (ivJump != null) ivJump.setImageResource(R.drawable.stickmanjumpright);
             jumpRight++;
             updateJumpLabels();
             updateLastMovementText("➡️ RIGHT MOVEMENT DETECTED", "#00FF00");
             saveJumpDataToAPI();
             setLEDForRightJump(); // Set LED to GREEN
             showToast("Right jump detected! LED: GREEN");
-            showMovementFlash(R.drawable.stickmanjumpright);
+            showMovementFlash("mwm_jump_right");
             speakIfProd("Right movement detected");
         }
         @Override public void onMiddle() {
             Log.i("TerminalFragment", "🎯 GYRO EVENT: FORWARD movement detected!");
-            if (ivJump != null) ivJump.setImageResource(R.drawable.stickmanjumpup);
             jumpUp++;
             updateJumpLabels();
             updateLastMovementText("⬆️ FORWARD MOVEMENT DETECTED", "#FFFFFF");
             saveJumpDataToAPI();
             setLEDForForwardJump(); // Set LED to WHITE
             showToast("Up jump detected! LED: WHITE");
-            showMovementFlash(R.drawable.stickmanjumpup);
+            showMovementFlash("mwm_jump_bounce");
             speakIfProd("Forward movement detected");
         }
         @Override public void onBack() {
             Log.i("TerminalFragment", "🎯 GYRO EVENT: BACK movement detected!");
-            if (ivJump != null) ivJump.setImageResource(R.drawable.stickmanjumpup);
             jumpBack++;
             updateJumpLabels();
             updateLastMovementText("⬇️ BACK MOVEMENT DETECTED", "#FF69B4");
             saveJumpDataToAPI();
             setLEDForBackJump(); // Set LED to PINK
             showToast("Back jump detected! LED: PINK");
-            showMovementFlash(R.drawable.stickmanjumpback);
+            showMovementFlash("mwm_jump_bounce"); // Reusing bounce GIF
             speakIfProd("Back movement detected");
         }
-        @Override public void onRaw(float x, float y, float z) {
+
+        @Override
+        public void onRaw(float x, float y, float z) {
             // Log raw gyroscope data periodically to verify sensor is working
-            if (System.currentTimeMillis() % 5000 < 50) { // Log every ~5 seconds (reduced frequency for better performance)
+            if (System.currentTimeMillis() % 5000 < 50) {
                 Log.d("TerminalFragment", String.format("🔄 GYRO RAW: x=%.3f y=%.3f z=%.3f", x, y, z));
             }
         }
@@ -885,26 +845,51 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     };
 
     private void toggleGyro() {
-        // Toggle between ESP32 and Phone Gyro
+        // Cycle through: ESP32 → Phone Gyro → Second Phone → ESP32...
         Log.i("TerminalFragment", "🔄 TOGGLE: Current mode before switch: " + currentSensorMode);
-        if (currentSensorMode == SensorMode.ESP32_ADXL345) {
-            currentSensorMode = SensorMode.PHONE_GYRO;
-            gyroEnabled = true;
-            initializePhoneGyroSensors();
-            Toast.makeText(getActivity(), "Switched to Phone Gyroscope", Toast.LENGTH_SHORT).show();
-            Log.i("TerminalFragment", "🔄 Switched to Phone Gyroscope for movement detection");
-            updateLastMovementText("📱 Phone gyroscope active", "#FFD700");
-        } else {
-            currentSensorMode = SensorMode.ESP32_ADXL345;
-            gyroEnabled = true;
-            if (sensorManager != null && phoneSensorListener != null) {
-                sensorManager.unregisterListener(phoneSensorListener);
-            }
-            Toast.makeText(getActivity(), "Switched to ESP32 ADXL345 mode", Toast.LENGTH_SHORT).show();
-            Log.i("TerminalFragment", "🔧 Switched to ESP32 ADXL345 for movement detection");
-            updateLastMovementText("🔧 ESP32 ADXL345 movement detection active", "#FF5722");
+        switch (currentSensorMode) {
+            case ESP32_ADXL345:
+                // Switch to Primary Phone Gyroscope mode
+                currentSensorMode = SensorMode.PHONE_GYRO;
+                gyroEnabled = true;
+                
+                // Stop ESP32 processing, start phone gyroscope
+                initializePhoneGyroSensors();
+                
+                Toast.makeText(getActivity(), "Switched to Primary Phone Gyroscope", Toast.LENGTH_SHORT).show();
+                Log.i("TerminalFragment", "🔄 Switched to Primary Phone Gyroscope for movement detection");
+                updateLastMovementText("📱 Primary phone gyroscope active", "#FFD700");
+                Log.i("TerminalFragment", "🔄 TOGGLE: Switched to PHONE_GYRO mode");
+                break;
+            
+            case PHONE_GYRO:
+                // Switch to Second Phone Gyroscope mode
+                currentSensorMode = SensorMode.SECOND_PHONE_GYRO;
+                gyroEnabled = true;
+                
+                // Stop phone gyroscope
+                if (sensorManager != null && phoneSensorListener != null) {
+                    sensorManager.unregisterListener(phoneSensorListener);
+                }
+                
+                Toast.makeText(getActivity(), "Switched to Second Phone Gyroscope mode", Toast.LENGTH_SHORT).show();
+                Log.i("TerminalFragment", "📱📱 Switched to Second Phone Gyroscope for movement detection");
+                updateLastMovementText("📱📱 Second phone gyroscope movement detection active", "#9C27B0");
+                Log.i("TerminalFragment", "🔄 TOGGLE: Switched to SECOND_PHONE_GYRO mode");
+                break;
+            
+            case SECOND_PHONE_GYRO:
+                // Switch back to ESP32 mode
+                currentSensorMode = SensorMode.ESP32_ADXL345;
+                gyroEnabled = true;
+                
+                Toast.makeText(getActivity(), "Switched to ESP32 ADXL345 mode", Toast.LENGTH_SHORT).show();
+                Log.i("TerminalFragment", "🔧 Switched to ESP32 ADXL345 for movement detection");
+                updateLastMovementText("🔧 ESP32 ADXL345 movement detection active", "#FF5722");
+                Log.i("TerminalFragment", "🔄 TOGGLE: Switched to ESP32_ADXL345 mode");
+                break;
         }
-
+        
         // Update button text and color
         updateGyroToggleButton();
     }
@@ -912,21 +897,34 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private void updateGyroToggleButton() {
         Log.i("TerminalFragment", "🔄 BUTTON UPDATE: Current mode: " + currentSensorMode + ", gyroEnabled: " + gyroEnabled);
         if (btnGyroToggle != null) {
-            if (currentSensorMode == SensorMode.PHONE_GYRO) {
-                btnGyroToggle.setText("Sensor: PHONE");
-                btnGyroToggle.setBackgroundColor(0xFF4CAF50);
-                Log.i("TerminalFragment", "🔄 BUTTON: Set to PHONE mode");
-            } else {
-                btnGyroToggle.setText("Sensor: ESP32 " + (connected == Connected.True ? "(CONNECTED)" : "(DISCONNECTED)"));
-                btnGyroToggle.setBackgroundColor(connected == Connected.True ? 0xFF2196F3 : 0xFFFF5722);
-                Log.i("TerminalFragment", "🔄 BUTTON: Set to ESP32 mode - " + (connected == Connected.True ? "CONNECTED" : "DISCONNECTED"));
+            switch (currentSensorMode) {
+                case PHONE_GYRO:
+                    btnGyroToggle.setText("Mode: PHONE " + (gyroEnabled ? "ON" : "OFF"));
+                    btnGyroToggle.setBackgroundColor(gyroEnabled ? 0xFF4CAF50 : 0xFFFF5722);
+                    Log.i("TerminalFragment", "🔄 BUTTON: Set to PHONE mode - " + (gyroEnabled ? "ON" : "OFF"));
+                    break;
+                case SECOND_PHONE_GYRO:
+                    btnGyroToggle.setText("Mode: PHONE2 " + (gyroEnabled ? "ON" : "OFF"));
+                    btnGyroToggle.setBackgroundColor(gyroEnabled ? 0xFF9C27B0 : 0xFFFF5722);
+                    Log.i("TerminalFragment", "🔄 BUTTON: Set to PHONE2 mode - " + (gyroEnabled ? "ON" : "OFF"));
+                    break;
+                case ESP32_ADXL345:
+                default:
+                    btnGyroToggle.setText("Mode: ESP32 " + (connected == Connected.True ? "CONNECTED" : "DISCONNECTED"));
+                    btnGyroToggle.setBackgroundColor(connected == Connected.True ? 0xFF2196F3 : 0xFFFF5722);
+                    Log.i("TerminalFragment", "🔄 BUTTON: Set to ESP32 mode - " + (connected == Connected.True ? "CONNECTED" : "DISCONNECTED"));
+                    break;
             }
         }
     }
 
     private void initModeSwitch(Context context) {
-        // Always show mode switch in all builds
+        // Hide in release builds
         if (switchMode == null) return;
+        if (!BuildConfig.DEBUG) {
+            switchMode.setVisibility(View.GONE);
+            return;
+        }
         SharedPreferences prefs = context.getSharedPreferences(PREFS_APP, Context.MODE_PRIVATE);
         isProductionMode = prefs.getBoolean(PREF_PROD_MODE, true);
         switchMode.setChecked(isProductionMode);
@@ -936,92 +934,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             btn.setText(checked ? "Production Mode" : "Development Mode");
             prefs.edit().putBoolean(PREF_PROD_MODE, checked).apply();
             Toast.makeText(context, checked ? "Production mode ON" : "Development mode ON", Toast.LENGTH_SHORT).show();
-            applyUiMode();
-        });
-    }
-
-    private void applyUiMode() {
-        Activity a = getActivity();
-        if (a == null) return;
-        a.runOnUiThread(() -> {
-            try {
-                // In production, hide status + communication log; keep header (toggles)
-                if (isProductionMode) {
-                    if (motionStatus != null) motionStatus.setVisibility(View.GONE);
-                    if (commSection != null) commSection.setVisibility(View.GONE);
-                    if (tvProdCounts != null) tvProdCounts.setVisibility(View.VISIBLE);
-
-                    if (movementContainer != null) {
-                        ViewGroup.LayoutParams lp = movementContainer.getLayoutParams();
-                        if (lp instanceof LinearLayout.LayoutParams) {
-                            LinearLayout.LayoutParams llp = (LinearLayout.LayoutParams) lp;
-                            llp.height = 0; // fill remaining using weight
-                            llp.width = ViewGroup.LayoutParams.MATCH_PARENT;
-                            llp.weight = 1f;
-                            llp.setMargins(0, 0, 0, 0);
-                            movementContainer.setLayoutParams(llp);
-                        } else if (lp instanceof ViewGroup.MarginLayoutParams) {
-                            ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams) lp;
-                            mlp.height = ViewGroup.LayoutParams.MATCH_PARENT;
-                            mlp.width = ViewGroup.LayoutParams.MATCH_PARENT;
-                            mlp.setMargins(0, 0, 0, 0);
-                            movementContainer.setLayoutParams(mlp);
-                        } else {
-                            lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
-                            lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
-                            movementContainer.setLayoutParams(lp);
-                        }
-                        movementContainer.requestLayout();
-                    }
-
-                    if (ivMovementFlash != null) {
-                        // Scale GIF/Image to fit center, full-bleed style
-                        ivMovementFlash.setScaleType(ImageView.ScaleType.CENTER_CROP);
-                        ViewGroup.LayoutParams ilp = ivMovementFlash.getLayoutParams();
-                        ilp.width = ViewGroup.LayoutParams.MATCH_PARENT;
-                        ilp.height = ViewGroup.LayoutParams.MATCH_PARENT;
-                        ivMovementFlash.setLayoutParams(ilp);
-                    }
-                } else {
-                    // Development: restore default visibilities and sizes
-                    if (motionStatus != null) motionStatus.setVisibility(View.VISIBLE);
-                    if (commSection != null) commSection.setVisibility(View.VISIBLE);
-                    if (tvProdCounts != null) tvProdCounts.setVisibility(View.GONE);
-
-                    if (movementContainer != null) {
-                        ViewGroup.LayoutParams lp = movementContainer.getLayoutParams();
-                        if (lp instanceof LinearLayout.LayoutParams) {
-                            LinearLayout.LayoutParams llp = (LinearLayout.LayoutParams) lp;
-                            llp.height = (int) (150 * getResources().getDisplayMetrics().density); // ~150dp
-                            llp.width = ViewGroup.LayoutParams.MATCH_PARENT;
-                            llp.weight = 0f;
-                            llp.setMargins(0, 0, 0, (int) (16 * getResources().getDisplayMetrics().density));
-                            movementContainer.setLayoutParams(llp);
-                        } else if (lp instanceof ViewGroup.MarginLayoutParams) {
-                            ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams) lp;
-                            mlp.height = (int) (150 * getResources().getDisplayMetrics().density); // back to ~150dp
-                            mlp.width = ViewGroup.LayoutParams.MATCH_PARENT;
-                            mlp.setMargins(0, 0, 0, (int) (16 * getResources().getDisplayMetrics().density));
-                            movementContainer.setLayoutParams(mlp);
-                        } else {
-                            lp.height = (int) (150 * getResources().getDisplayMetrics().density);
-                            lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
-                            movementContainer.setLayoutParams(lp);
-                        }
-                        movementContainer.requestLayout();
-                    }
-
-                    if (ivMovementFlash != null) {
-                        ivMovementFlash.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-                        ViewGroup.LayoutParams ilp = ivMovementFlash.getLayoutParams();
-                        ilp.width = (int) (120 * getResources().getDisplayMetrics().density);
-                        ilp.height = (int) (120 * getResources().getDisplayMetrics().density);
-                        ivMovementFlash.setLayoutParams(ilp);
-                    }
-                }
-            } catch (Exception e) {
-                Log.w("TerminalFragment", "applyUiMode failed: " + e.getMessage());
-            }
         });
     }
 
@@ -1138,13 +1050,15 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         Log.i("TerminalFragment", "🔍 Bluetooth connected: " + (connected == Connected.True));
         Log.i("TerminalFragment", "🔍 Service available: " + (service != null));
         
+
         // Test 3: Try to manually trigger a gyro event
         if (gyroEnabled) {
             Log.i("TerminalFragment", "🧪 Manually triggering left jump...");
-            if (ivJump != null) ivJump.setImageResource(R.drawable.stickmanjumpleft);
+
             jumpLeft++;
             updateJumpLabels();
             setLEDForLeftJump();
+            showMovementFlash("mwm_dress_left"); // Use your new animation instead
             Toast.makeText(a, "Manual left jump triggered!", Toast.LENGTH_SHORT).show();
         }
         
@@ -1277,12 +1191,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         if (tvJumpBack != null) tvJumpBack.setText(String.valueOf(jumpBack));
         Log.d("TerminalFragment", String.format("Jump counts - Left: %d, Right: %d, Up: %d, Back: %d", 
             jumpLeft, jumpRight, jumpUp, jumpBack));
-
-        // Update production overlay if visible
-        if (tvProdCounts != null) {
-            String overlay = "L: " + jumpLeft + "  R: " + jumpRight + "  F: " + jumpUp + "  B: " + jumpBack;
-            tvProdCounts.setText(overlay);
-        }
     }
 
     private void showToast(String message) {
@@ -1295,12 +1203,13 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     // Test method to manually trigger jump animations (for debugging)
     private void testJumpAnimations() {
         Log.d("TerminalFragment", "Testing jump animations");
-        
+
         // Test left jump
-        ivJump.setImageResource(R.drawable.stickmanjumpleft);
+
         jumpLeft++;
         updateJumpLabels();
-        
+        showMovementFlash("mwm_dress_left"); // Use your new animation instead
+
         // You can call this method to test if the UI updates work
         Activity a = getActivity();
         if (a != null) {
