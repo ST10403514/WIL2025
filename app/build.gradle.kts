@@ -49,6 +49,9 @@ dependencies {
     implementation("com.google.firebase:firebase-database:22.0.0")
     implementation ("com.squareup.retrofit2:retrofit:2.9.0")
     implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
+    // GIF/image loading
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
     implementation ("com.squareup.okhttp3:okhttp:4.11.0")
     implementation("com.google.android.gms:play-services-auth:21.4.0")
     implementation("androidx.biometric:biometric:1.2.0-alpha05")
