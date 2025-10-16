@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+    
+    <!-- Background circle with gradient effect -->
+    <group>
+        <path
+            android:fillColor="@color/pulse_logo_color"
+            android:pathData="M60,8
+                            C30.2,8 6,32.2 6,62
+                            C6,91.8 30.2,116 60,116
+                            C89.8,116 114,91.8 114,62
+                            C114,32.2 89.8,8 60,8Z" />
+    </group>
+    
+    <!-- Inner shadow circle -->
+    <group>
+        <path
+            android:fillColor="#3A9B7A"
+            android:pathData="M60,12
+                            C32.4,12 10,34.4 10,62
+                            C10,89.6 32.4,112 60,112
+                            C87.6,112 110,89.6 110,62
+                            C110,34.4 87.6,12 60,12Z" />
+    </group>
+    
+    <!-- Main pulse wave line -->
+    <group>
+        <path
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="3.5"
+            android:fillType="nonZero"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M18,62
+                            L30,62
+                            L35,45
+                            L40,78
+                            L45,25
+                            L50,95
+                            L55,15
+                            L60,105
+                            L65,35
+                            L70,85
+                            L75,45
+                            L80,75
+                            L85,55
+                            L90,68
+                            L95,58
+                            L102,62" />
+    </group>
+    
+    <!-- Secondary pulse wave (lighter) -->
+    <group>
+        <path
+            android:strokeColor="#CCFFFFFF"
+            android:strokeWidth="2"
+            android:fillType="nonZero"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M22,66
+                            L28,66
+                            L32,54
+                            L36,74
+                            L42,48
+                            L48,80
+                            L54,44
+                            L60,84
+                            L66,52
+                            L72,76
+                            L78,58
+                            L84,70
+                            L88,62
+                            L94,66
+                            L98,66" />
+    </group>
+    
+    <!-- Heart symbol -->
+    <group>
+        <path
+            android:fillColor="@color/pulse_heart_color"
+            android:pathData="M60,90
+                            C54,84 42,72 42,62
+                            C42,57 46,53 51,53
+                            C54,53 57,54 60,57
+                            C63,54 66,53 69,53
+                            C74,53 78,57 78,62
+                            C78,72 66,84 60,90Z" />
+    </group>
+    
+    <!-- Heart highlight -->
+    <group>
+        <path
+            android:fillColor="#FF6666"
+            android:pathData="M60,87
+                            C56,82 47,73 47,65
+                            C47,61 50,58 53,58
+                            C55,58 57,59 59,61
+                            C61,59 63,58 65,58
+                            C68,58 71,61 71,65
+                            C71,73 62,82 60,87Z" />
+    </group>
+    
+</vector>
