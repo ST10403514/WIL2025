@@ -65,7 +65,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
 
     private enum Connected { False, Pending, True }
     private enum SensorMode { PHONE_GYRO, ESP32_ADXL345, SECOND_PHONE_GYRO }
-    
+
     private FirebaseAuth auth;
     private String deviceAddress;
     private SerialService service;
@@ -80,13 +80,13 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private boolean hexEnabled = false;
     private boolean pendingNewline = false;
     private String newline = TextUtil.newline_crlf;
-    
+
     // Phone sensor variables
     private SensorManager sensorManager;
     private Sensor gyroSensor;
     private Sensor accelerometerSensor;
     private boolean gyroEnabled = false;
-    
+
     private static final int REQ_BT_CONNECT = 1001;
     private final Handler reconnectHandler = new Handler(Looper.getMainLooper());
     private final Runnable reconnectRunnable = () -> {
@@ -141,19 +141,19 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private TextView tvJumpRight;
 
     private TextView tvJumpMiddle;
-    
+
     private TextView tvJumpBack;
-    
+
     private TextView tvLastMovement;
-    
+
     private TextView tvCalibrationPrompt;
-    
+
     // Mode + TTS
     private static final String PREFS_APP = "AppPrefs";
     private static final String PREF_PROD_MODE = "prod_mode";
     private boolean isProductionMode = true; // default
     private TextToSpeech tts;
-    
+
     // Auto-connect functionality
     private static final String PREFS_NAME = "BluetoothPrefs";
     private static final String PREF_DEVICE_ADDRESS = "saved_device_address";
@@ -227,7 +227,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             Activity a = getActivity();
             if (a != null) a.runOnUiThread(this::connect);
         }
-        
+
         // Re-enable gyroscope when resuming if it was previously enabled
         if (gyroEnabled) {
             Activity a = getActivity();
@@ -296,8 +296,8 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         //LED Buttons-----------------------
 
         btnLogin = view.findViewById(R.id.btnLogin);
-    btnGyroToggle = view.findViewById(R.id.btnGyroToggle);
-    switchMode = view.findViewById(R.id.switchMode);
+        btnGyroToggle = view.findViewById(R.id.btnGyroToggle);
+        switchMode = view.findViewById(R.id.switchMode);
         ivJump = view.findViewById(R.id.ivJump);
         ivMovementFlash = view.findViewById(R.id.ivMovementFlash);
         showView = view.findViewById(R.id.showView);
@@ -381,13 +381,13 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         });
 
         btnGyroToggle.setOnClickListener(v -> toggleGyro());
-        
-    // Initialize sensor mode button text
-    updateGyroToggleButton();
-    // Initialize mode switch (debug-only) and TTS
-    initModeSwitch(view.getContext());
-    initTts(view.getContext());
-        
+
+        // Initialize sensor mode button text
+        updateGyroToggleButton();
+        // Initialize mode switch (debug-only) and TTS
+        initModeSwitch(view.getContext());
+        initTts(view.getContext());
+
         // Check if gyroscope is available and show status
         Activity activity = getActivity();
         if (activity instanceof MainActivity) {
@@ -411,28 +411,28 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         btnJumpLeftSelect.setOnClickListener(v -> {
             selectedMovement = "LEFT";
             isManualModeActive = true;
-            showMovementFlash("mwm_dress_left2");
+            showMovementFlash("mwm_dress_left3");
             Toast.makeText(getContext(), "Now perform your LEFT jump!", Toast.LENGTH_SHORT).show();
         });
 
         btnJumpRightSelect.setOnClickListener(v -> {
             selectedMovement = "RIGHT";
             isManualModeActive = true;
-            showMovementFlash("mwm_jump_right2");
+            showMovementFlash("mwm_jump_right3");
             Toast.makeText(getContext(), "Now perform your RIGHT jump!", Toast.LENGTH_SHORT).show();
         });
 
         btnJumpUpSelect.setOnClickListener(v -> {
             selectedMovement = "UP";
             isManualModeActive = true;
-            showMovementFlash("mwm_jump_bounce2");
+            showMovementFlash("mwm_jump_bounce3");
             Toast.makeText(getContext(), "Now perform your UP jump!", Toast.LENGTH_SHORT).show();
         });
 
         btnJumpFrontSelect.setOnClickListener(v -> {
             selectedMovement = "FORWARD";
             isManualModeActive = true;
-            showMovementFlash("mwm_jump_bounce2");
+            showMovementFlash("mwm_jump_bounce3");
             Toast.makeText(getContext(), "Now perform your FORWARD jump!", Toast.LENGTH_SHORT).show();
         });
 
@@ -469,7 +469,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         LinearLayout headerControls = view.findViewById(R.id.headerControls);
         LinearLayout ledOptions = view.findViewById(R.id.ledOptions);
         LinearLayout commSection = view.findViewById(R.id.commSection);
-       // LinearLayout motionStatus = view.findViewById(R.id.motionStatus); // optional, hides score area too
+        // LinearLayout motionStatus = view.findViewById(R.id.motionStatus); // optional, hides score area too
 
         final boolean[] areExtrasVisible = {true};
 
@@ -480,7 +480,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             headerControls.setVisibility(visibility);
             ledOptions.setVisibility(visibility);
             commSection.setVisibility(visibility);
-           // motionStatus.setVisibility(visibility); // optional
+            // motionStatus.setVisibility(visibility); // optional
 
             btnToggleUI.setText(areExtrasVisible[0] ? "Hide Extra Controls" : "Show Extra Controls");
 
@@ -594,7 +594,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private void disconnect() {
         connected = Connected.False;
         if (service != null) service.disconnect();
-        
+
         // Update button to show disconnected status
         updateGyroToggleButton();
     }
@@ -631,7 +631,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         SpannableStringBuilder spn = new SpannableStringBuilder();
         for (byte[] data : datas) {
             String msg = new String(data);
-            
+
             // Debug: Log all received messages from ESP32
             Log.d("TerminalFragment", "📥 ESP32 DATA: '" + msg + "'");
 
@@ -658,7 +658,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private void processESP32MovementData(String msg) {
         try {
             // Handle different ESP32 data formats:
-            
+
             // Format 1: Raw accelerometer data "ACCEL:x,y,z"
             if (msg.startsWith("ACCEL:")) {
                 parseAccelerometerData(msg);
@@ -671,7 +671,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             else if (msg.contains("Movement Detected") || msg.contains("Jump detected")) {
                 parseMovementText(msg);
             }
-            
+
         } catch (Exception e) {
             Log.e("TerminalFragment", "🔧 ESP32 DATA ERROR: Failed to process ESP32 data: " + msg + " - " + e.getMessage());
         }
@@ -680,18 +680,18 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private void parseAccelerometerData(String accelMessage) {
         // Expected format: "ACCEL:x,y,z" (e.g., "ACCEL:0.25,-0.13,0.07")
         if (!accelMessage.startsWith("ACCEL:")) return;
-        
+
         String values = accelMessage.substring(6); // Remove "ACCEL:" prefix
         String[] parts = values.split(",");
-        
+
         if (parts.length >= 3) {
             float accelX = Float.parseFloat(parts[0].trim());
             float accelY = Float.parseFloat(parts[1].trim());
             float accelZ = Float.parseFloat(parts[2].trim());
-            
+
             // Log raw accelerometer data
             Log.d("TerminalFragment", String.format("🔄 ESP32 ACCEL RAW: x=%.3f y=%.3f z=%.3f", accelX, accelY, accelZ));
-            
+
             // Process movement detection based on accelerometer thresholds
             processAccelerometerMovement(accelX, accelY, accelZ);
         }
@@ -700,10 +700,10 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private void parseMovementCommand(String moveMessage) {
         // Expected format: "MOVE:LEFT", "MOVE:RIGHT", "MOVE:FORWARD", "MOVE:BACK"
         if (!moveMessage.startsWith("MOVE:")) return;
-        
+
         String direction = moveMessage.substring(5).trim().toUpperCase();
         Log.d("TerminalFragment", "🎯 ESP32 MOVE COMMAND: " + direction);
-        
+
         switch (direction) {
             case "LEFT":
                 handleLeftMovement();
@@ -738,10 +738,10 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private void processAccelerometerMovement(float accelX, float accelY, float accelZ) {
         // Define movement thresholds for ADXL345 accelerometer
         final float ACCEL_THRESHOLD = 2.0f; // Adjust based on your ESP32 sensitivity
-        
+
         // Determine movement direction based on acceleration values
         // Note: These may need adjustment based on your ESP32 orientation
-        
+
         if (Math.abs(accelX) > ACCEL_THRESHOLD) {
             if (accelX > ACCEL_THRESHOLD) {
                 handleRightMovement();
@@ -770,7 +770,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         showToast("Left movement detected! LED: BLUE");
 
         // Show flash animation for left movement using your GIF/WebP
-        showMovementFlash("mwm_dress_left2");
+        showMovementFlash("mwm_dress_left3");
         speakIfProd("Left movement detected");
     }
 
@@ -785,7 +785,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         showToast("Right movement detected! LED: GREEN");
 
         // Show flash animation for right movement using your GIF/WebP
-        showMovementFlash("mwm_jump_right2");
+        showMovementFlash("mwm_jump_right3");
         speakIfProd("Right movement detected");
     }
 
@@ -800,7 +800,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         showToast("Forward movement detected! LED: WHITE");
 
         // Show flash animation for forward movement using your GIF/WebP
-        showMovementFlash("mwm_jump_bounce2");
+        showMovementFlash("mwm_jump_bounce3");
         speakIfProd("Forward movement detected");
     }
 
@@ -815,7 +815,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         showToast("Back movement detected! LED: RED");
 
         // Show flash animation for back movement using your GIF/WebP
-        showMovementFlash("mwm_jump_bounce2"); // Reusing the bounce GIF for back movement
+        showMovementFlash("mwm_jump_bounce3"); // Reusing the bounce GIF for back movement
         speakIfProd("Back movement detected");
     }
 
@@ -857,7 +857,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             saveJumpDataToAPI();
             setLEDForLeftJump(); // Set LED to YELLOW
             showToast("Left jump detected! LED: YELLOW");
-            showMovementFlash("mwm_dress_left2");
+            showMovementFlash("mwm_dress_left3");
             speakIfProd("Left movement detected");
 
 // confirm user-selected movement (if any)
@@ -876,7 +876,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             saveJumpDataToAPI();
             setLEDForRightJump(); // Set LED to GREEN
             showToast("Right jump detected! LED: GREEN");
-            showMovementFlash("mwm_jump_right2");
+            showMovementFlash("mwm_jump_right3");
             speakIfProd("Right movement detected");
 
             // confirm user-selected movement (if any)
@@ -895,7 +895,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             saveJumpDataToAPI();
             setLEDForForwardJump(); // Set LED to WHITE
             showToast("Up jump detected! LED: WHITE");
-            showMovementFlash("mwm_jump_bounce2");
+            showMovementFlash("mwm_jump_bounce3");
             speakIfProd("Forward movement detected");
 
             // confirm user-selected movement (if any)
@@ -906,7 +906,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             isManualModeActive = false;
         }
         @Override public void onBack() {
-           // if (!isAutoDetectionEnabled) return;
+            // if (!isAutoDetectionEnabled) return;
             if (!isAutoDetectionEnabled && !isManualModeActive) return;
             Log.i("TerminalFragment", "🎯 GYRO EVENT: BACK movement detected!");
             jumpBack++;
@@ -915,7 +915,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             saveJumpDataToAPI();
             setLEDForBackJump(); // Set LED to PINK
             showToast("Back jump detected! LED: PINK");
-            showMovementFlash("mwm_jump_bounce2"); // Reusing bounce GIF
+            showMovementFlash("mwm_jump_bounce3"); // Reusing bounce GIF
             speakIfProd("Back movement detected");
 
             // confirm user-selected movement (if any)
@@ -934,7 +934,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             }
         }
     };
-    
+
     private final GyroManager.CalibrationListener calibrationListener = new GyroManager.CalibrationListener() {
         @Override
         public void onCalibrationStart() {
@@ -985,48 +985,48 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
                 // Switch to Primary Phone Gyroscope mode
                 currentSensorMode = SensorMode.PHONE_GYRO;
                 gyroEnabled = true;
-                
+
                 // Stop ESP32 processing, start phone gyroscope
                 initializePhoneGyroSensors();
-                
+
                 Toast.makeText(getActivity(), "Switched to Primary Phone Gyroscope", Toast.LENGTH_SHORT).show();
                 Log.i("TerminalFragment", "🔄 Switched to Primary Phone Gyroscope for movement detection");
                 updateLastMovementText("📱 Primary phone gyroscope active", "#FFD700");
                 Log.i("TerminalFragment", "🔄 TOGGLE: Switched to PHONE_GYRO mode");
                 break;
-            
+
             case PHONE_GYRO:
                 // Switch to Second Phone Gyroscope mode
                 currentSensorMode = SensorMode.SECOND_PHONE_GYRO;
                 gyroEnabled = true;
-                
+
                 // Stop phone gyroscope
                 if (sensorManager != null && phoneSensorListener != null) {
                     sensorManager.unregisterListener(phoneSensorListener);
                 }
-                
+
                 Toast.makeText(getActivity(), "Switched to Second Phone Gyroscope mode", Toast.LENGTH_SHORT).show();
                 Log.i("TerminalFragment", "📱📱 Switched to Second Phone Gyroscope for movement detection");
                 updateLastMovementText("📱📱 Second phone gyroscope movement detection active", "#9C27B0");
                 Log.i("TerminalFragment", "🔄 TOGGLE: Switched to SECOND_PHONE_GYRO mode");
                 break;
-            
+
             case SECOND_PHONE_GYRO:
                 // Switch back to ESP32 mode
                 currentSensorMode = SensorMode.ESP32_ADXL345;
                 gyroEnabled = true;
-                
+
                 Toast.makeText(getActivity(), "Switched to ESP32 ADXL345 mode", Toast.LENGTH_SHORT).show();
                 Log.i("TerminalFragment", "🔧 Switched to ESP32 ADXL345 for movement detection");
                 updateLastMovementText("🔧 ESP32 ADXL345 movement detection active", "#FF5722");
                 Log.i("TerminalFragment", "🔄 TOGGLE: Switched to ESP32_ADXL345 mode");
                 break;
         }
-        
+
         // Update button text and color
         updateGyroToggleButton();
     }
-    
+
     private void updateGyroToggleButton() {
         Log.i("TerminalFragment", "🔄 BUTTON UPDATE: Current mode: " + currentSensorMode + ", gyroEnabled: " + gyroEnabled);
         if (btnGyroToggle != null) {
@@ -1099,7 +1099,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         // DISABLED: Phone gyroscope no longer used - using ESP32 + ADXL345 instead
         Log.i("TerminalFragment", "�➡️�🔧 Phone gyroscope disabled - using ESP32 + ADXL345 for movement detection");
         updateLastMovementText("🔧 ESP32 + ADXL345 movement detection active", "#00FFFF");
-        
+
         // Still test LED connection since ESP32 controls LEDs
         testLEDConnection();
     }
@@ -1108,23 +1108,23 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         Log.d("TerminalFragment", "Testing LED connection...");
         Log.d("TerminalFragment", "Bluetooth connected: " + (connected == Connected.True));
         Log.d("TerminalFragment", "Service available: " + (service != null));
-        
+
         if (connected == Connected.True && service != null) {
             Log.i("TerminalFragment", "🔵 Testing LED - sending BLUE command");
             send("b"); // Send blue as test
-            
+
             // Schedule a sequence of color tests
             Handler handler = new Handler();
             handler.postDelayed(() -> {
                 Log.i("TerminalFragment", "🔴 Testing LED - sending RED command");
                 send("r");
             }, 1000);
-            
+
             handler.postDelayed(() -> {
-                Log.i("TerminalFragment", "🟢 Testing LED - sending GREEN command"); 
+                Log.i("TerminalFragment", "🟢 Testing LED - sending GREEN command");
                 send("g");
             }, 2000);
-            
+
             handler.postDelayed(() -> {
                 Log.i("TerminalFragment", "⚪ Testing LED - sending WHITE command");
                 send("w");
@@ -1148,13 +1148,13 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             if (sm != null) {
                 java.util.List<android.hardware.Sensor> sensors = sm.getSensorList(android.hardware.Sensor.TYPE_ALL);
                 Log.i("TerminalFragment", "📱 Device has " + sensors.size() + " sensors total");
-                
+
                 android.hardware.Sensor gyro = sm.getDefaultSensor(android.hardware.Sensor.TYPE_GYROSCOPE);
                 android.hardware.Sensor accel = sm.getDefaultSensor(android.hardware.Sensor.TYPE_ACCELEROMETER);
-                
+
                 Log.i("TerminalFragment", "🔄 Gyroscope sensor: " + (gyro != null ? gyro.getName() : "NOT AVAILABLE"));
                 Log.i("TerminalFragment", "📐 Accelerometer sensor: " + (accel != null ? accel.getName() : "NOT AVAILABLE"));
-                
+
                 if (gyro == null) {
                     Toast.makeText(a, "❌ No gyroscope sensor found on this device!", Toast.LENGTH_LONG).show();
                 } else {
@@ -1167,7 +1167,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private void runManualTests() {
         Log.i("TerminalFragment", "🧪 Running manual diagnostic tests...");
         Toast.makeText(getActivity(), "Running diagnostic tests...", Toast.LENGTH_SHORT).show();
-        
+
         // Test 1: Check gyroscope status
         Activity a = getActivity();
         if (a instanceof MainActivity) {
@@ -1178,11 +1178,11 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
                 Log.i("TerminalFragment", "🔍 Current gyroEnabled: " + gyroEnabled);
             }
         }
-        
+
         // Test 2: Check Bluetooth connection
         Log.i("TerminalFragment", "🔍 Bluetooth connected: " + (connected == Connected.True));
         Log.i("TerminalFragment", "🔍 Service available: " + (service != null));
-        
+
 
         // Test 3: Try to manually trigger a gyro event
         if (gyroEnabled) {
@@ -1194,7 +1194,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             showMovementFlash("mwm_dress_left"); // Use your new animation instead
             Toast.makeText(a, "Manual left jump triggered!", Toast.LENGTH_SHORT).show();
         }
-        
+
         // Test 4: Try sending basic LED command
         if (connected == Connected.True) {
             Log.i("TerminalFragment", "🧪 Sending test LED command (blue)...");
@@ -1209,47 +1209,47 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             Toast.makeText(getActivity(), "LED Test Failed - Bluetooth not connected", Toast.LENGTH_SHORT).show();
             return;
         }
-        
+
         Toast.makeText(getActivity(), "Running LED Test Sequence...", Toast.LENGTH_SHORT).show();
-        
+
         Handler handler = new Handler();
-        
+
         // Red
         handler.postDelayed(() -> {
             send("r");
             Log.i("TerminalFragment", "🔴 LED Test: RED");
         }, 0);
-        
-        // Green  
+
+        // Green
         handler.postDelayed(() -> {
             send("g");
             Log.i("TerminalFragment", "🟢 LED Test: GREEN");
         }, 1000);
-        
+
         // Blue
         handler.postDelayed(() -> {
             send("b");
             Log.i("TerminalFragment", "🔵 LED Test: BLUE");
         }, 2000);
-        
+
         // White
         handler.postDelayed(() -> {
             send("w");
             Log.i("TerminalFragment", "⚪ LED Test: WHITE");
         }, 3000);
-        
+
         // Yellow/Topaz
         handler.postDelayed(() -> {
             send("t");
             Log.i("TerminalFragment", "🟡 LED Test: YELLOW");
         }, 4000);
-        
+
         // Pink/Lilac
         handler.postDelayed(() -> {
             send("l");
             Log.i("TerminalFragment", "🩷 LED Test: PINK");
         }, 5000);
-        
+
         // Off
         handler.postDelayed(() -> {
             send("o");
@@ -1261,44 +1261,44 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private void runAccelTestSequence() {
         Log.i("TerminalFragment", "🧪 Running ESP32 accelerometer data simulation test...");
         Toast.makeText(getActivity(), "Testing ESP32 Movement Detection...", Toast.LENGTH_SHORT).show();
-        
+
         Handler handler = new Handler();
-        
+
         // Test LEFT movement
         handler.postDelayed(() -> {
             Log.i("TerminalFragment", "🧪 Simulating LEFT movement: ACCEL:3.0,0.5,0.2");
             processESP32MovementData("ACCEL:3.0,0.5,0.2");
         }, 500);
-        
-        // Test RIGHT movement  
+
+        // Test RIGHT movement
         handler.postDelayed(() -> {
             Log.i("TerminalFragment", "🧪 Simulating RIGHT movement: ACCEL:-3.0,0.5,0.2");
             processESP32MovementData("ACCEL:-3.0,0.5,0.2");
         }, 2000);
-        
+
         // Test FORWARD movement
         handler.postDelayed(() -> {
             Log.i("TerminalFragment", "🧪 Simulating FORWARD movement: ACCEL:0.2,3.0,0.5");
             processESP32MovementData("ACCEL:0.2,3.0,0.5");
         }, 3500);
-        
+
         // Test BACK movement
         handler.postDelayed(() -> {
             Log.i("TerminalFragment", "🧪 Simulating BACK movement: ACCEL:0.2,-3.0,0.5");
             processESP32MovementData("ACCEL:0.2,-3.0,0.5");
         }, 5000);
-        
+
         // Test direct commands
         handler.postDelayed(() -> {
             Log.i("TerminalFragment", "🧪 Testing direct command: MOVE:LEFT (should be BLUE)");
             processESP32MovementData("MOVE:LEFT");
         }, 6500);
-        
+
         handler.postDelayed(() -> {
             Log.i("TerminalFragment", "🧪 Testing direct command: MOVE:BACK (should be RED)");
             processESP32MovementData("MOVE:BACK");
         }, 8000);
-        
+
         handler.postDelayed(() -> {
             Toast.makeText(getActivity(), "ESP32 Movement Test Complete!", Toast.LENGTH_SHORT).show();
             Log.i("TerminalFragment", "✅ ESP32 accelerometer simulation test complete");
@@ -1309,7 +1309,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         if (tvLastMovement != null) {
             tvLastMovement.setText(movement);
             tvLastMovement.setTextColor(android.graphics.Color.parseColor(colorHex));
-            
+
             // Add timestamp
             java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault());
             String timestamp = sdf.format(new java.util.Date());
@@ -1322,8 +1322,8 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         if (tvJumpRight != null) tvJumpRight.setText(String.valueOf(jumpRight));
         if (tvJumpMiddle != null) tvJumpMiddle.setText(String.valueOf(jumpUp));
         if (tvJumpBack != null) tvJumpBack.setText(String.valueOf(jumpBack));
-        Log.d("TerminalFragment", String.format("Jump counts - Left: %d, Right: %d, Up: %d, Back: %d", 
-            jumpLeft, jumpRight, jumpUp, jumpBack));
+        Log.d("TerminalFragment", String.format("Jump counts - Left: %d, Right: %d, Up: %d, Back: %d",
+                jumpLeft, jumpRight, jumpUp, jumpBack));
     }
 
     private void showToast(String message) {
@@ -1372,13 +1372,13 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     }
 
     private boolean isInConnectionLostState = false;
-    
+
     private void setLEDForConnectionLost() {
         if (isInConnectionLostState) {
             Log.d("TerminalFragment", "Already in connection lost state - skipping LED command");
             return;
         }
-        
+
         isInConnectionLostState = true;
         try {
             if (connected == Connected.True && service != null) {
@@ -1427,7 +1427,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             }
         }
     }
-    
+
     /*
      * Auto-connect functionality
      */
@@ -1438,12 +1438,12 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             Log.i("TerminalFragment", "📱 Saved device address for auto-connect: " + deviceAddress);
         }
     }
-    
+
     private String getSavedDeviceAddress() {
         SharedPreferences prefs = requireContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         return prefs.getString(PREF_DEVICE_ADDRESS, null);
     }
-    
+
     private void attemptAutoConnect() {
         String savedAddress = getSavedDeviceAddress();
         if (savedAddress == null) {
@@ -1451,24 +1451,24 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             showDeviceSelectionDialog();
             return;
         }
-        
+
         if (currentConnectAttempt >= MAX_CONNECT_ATTEMPTS) {
             Log.i("TerminalFragment", "📱 Max auto-connect attempts reached - showing device selection");
             showDeviceSelectionDialog();
             return;
         }
-        
+
         currentConnectAttempt++;
         isAutoConnecting = true;
         Log.i("TerminalFragment", "📱 Auto-connect attempt " + currentConnectAttempt + "/" + MAX_CONNECT_ATTEMPTS + " to: " + savedAddress);
-        
+
         BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
             Log.w("TerminalFragment", "📱 Bluetooth not available/enabled - showing device selection");
             showDeviceSelectionDialog();
             return;
         }
-        
+
         try {
             // Set the device address and use existing connect method
             deviceAddress = savedAddress;
@@ -1478,12 +1478,12 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             onSerialConnectError(e);
         }
     }
-    
+
     private void showDeviceSelectionDialog() {
         // Reset auto-connect state
         isAutoConnecting = false;
         currentConnectAttempt = 0;
-        
+
         // Navigate back to DevicesFragment for device selection
         if (getActivity() != null) {
             getActivity().getSupportFragmentManager().popBackStack();
@@ -1500,17 +1500,17 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         connected = Connected.True;
         isInConnectionLostState = false; // Reset connection lost state
         Log.i("TerminalFragment", "✅ Bluetooth connected successfully");
-        
+
         // Update button to show connection status
         updateGyroToggleButton();
-        
+
         // Save device address for auto-connect
         saveDeviceAddress();
-        
+
         // Reset auto-connect attempt counter on successful connection
         currentConnectAttempt = 0;
         isAutoConnecting = false;
-        
+
         // Test LED connection when Bluetooth connects
         Handler handler = new Handler();
         handler.postDelayed(() -> {
@@ -1523,7 +1523,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         status("connection failed: " + e.getMessage());
         setLEDForConnectionLost(); // Set LED to RED
         disconnect();
-        
+
         if (isAutoConnecting && currentConnectAttempt < MAX_CONNECT_ATTEMPTS) {
             // Retry auto-connect
             Log.i("TerminalFragment", "📱 Auto-connect failed, retrying in 2 seconds... (attempt " + currentConnectAttempt + "/" + MAX_CONNECT_ATTEMPTS + ")");
@@ -1563,7 +1563,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         reconnectHandler.removeCallbacks(reconnectRunnable);
         reconnectHandler.postDelayed(reconnectRunnable, 1500);
     }
-    
+
     private void saveJumpDataToAPI() {
         if (auth == null) auth = FirebaseAuth.getInstance();
         FirebaseUser currentUser = auth != null ? auth.getCurrentUser() : null;
@@ -1606,17 +1606,17 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         requireActivity().finish();
         startActivity(intent);
     }
-    
+
     private void initializePhoneGyroSensors() {
         Log.i("TerminalFragment", "📱 Initializing phone gyroscope for movement detection");
-        
+
         // Phone Gyroscope initialization logic
         sensorManager = (SensorManager) requireContext().getSystemService(Context.SENSOR_SERVICE);
-        
+
         // Log available sensors
         if (sensorManager != null) {
             Log.i("TerminalFragment", "📱 Device has " + sensorManager.getSensorList(Sensor.TYPE_ALL).size() + " sensors total");
-            
+
             // Initialize gyroscope
             gyroSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
             if (gyroSensor != null) {
@@ -1627,35 +1627,35 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
                 Log.w("TerminalFragment", "❌ No gyroscope sensor available");
                 Toast.makeText(getActivity(), "No gyroscope sensor available", Toast.LENGTH_SHORT).show();
             }
-            
+
             // Initialize accelerometer for reference
             accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
             if (accelerometerSensor != null) {
                 Log.i("TerminalFragment", "📐 Accelerometer sensor: " + accelerometerSensor.getName());
             }
         }
-        
+
         updateLastMovementText("📱 Phone gyroscope initialized", "#FFD700");
         updateGyroToggleButton();
-        
-        // Test LED connection 
+
+        // Test LED connection
         testLEDConnection();
     }
-    
+
     // Phone sensor event listener
     private final SensorEventListener phoneSensorListener = new SensorEventListener() {
         @Override
         public void onSensorChanged(SensorEvent event) {
             if (currentSensorMode != SensorMode.PHONE_GYRO) return;
-            
+
             if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
                 float x = event.values[0];
                 float y = event.values[1];
                 float z = event.values[2];
-                
+
                 // Basic threshold-based movement detection
                 float threshold = 2.0f;
-                
+
                 if (Math.abs(x) > threshold) {
                     if (x > 0) {
                         handleLeftMovement();
@@ -1671,7 +1671,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
                 }
             }
         }
-        
+
         @Override
         public void onAccuracyChanged(Sensor sensor, int accuracy) {
             // Handle accuracy changes if needed
@@ -1679,6 +1679,3 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     };
 
 }
-
-
-
