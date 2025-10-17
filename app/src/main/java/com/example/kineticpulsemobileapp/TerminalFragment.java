@@ -35,6 +35,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.Switch;
@@ -100,6 +101,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private String selectedMovement = null;
     // Toggles automatic motion detection
     private boolean isAutoDetectionEnabled = true;
+    private boolean areExtrasVisible = true;
 
     private Button btnLEDOptions;
     private View ledOptionsView;
@@ -460,6 +462,34 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             ).show();
         });
 
+// ===== TOGGLE UI VISIBILITY BUTTON =====
+        Button btnToggleUI = view.findViewById(R.id.btnToggleUI);
+
+// Sections to hide/show (but NOT the toggle button itself)
+        LinearLayout headerControls = view.findViewById(R.id.headerControls);
+        LinearLayout ledOptions = view.findViewById(R.id.ledOptions);
+        LinearLayout commSection = view.findViewById(R.id.commSection);
+       // LinearLayout motionStatus = view.findViewById(R.id.motionStatus); // optional, hides score area too
+
+        final boolean[] areExtrasVisible = {true};
+
+        btnToggleUI.setOnClickListener(v -> {
+            areExtrasVisible[0] = !areExtrasVisible[0];
+            int visibility = areExtrasVisible[0] ? View.VISIBLE : View.GONE;
+
+            headerControls.setVisibility(visibility);
+            ledOptions.setVisibility(visibility);
+            commSection.setVisibility(visibility);
+           // motionStatus.setVisibility(visibility); // optional
+
+            btnToggleUI.setText(areExtrasVisible[0] ? "Hide Extra Controls" : "Show Extra Controls");
+
+            Toast.makeText(
+                    getContext(),
+                    areExtrasVisible[0] ? "Showing all controls" : "Simplified view enabled",
+                    Toast.LENGTH_SHORT
+            ).show();
+        });
 
         return view;
     }
