@@ -19,105 +19,105 @@
             android:id="@+id/headerControls"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="#FFEB3B"
-            android:padding="12dp"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/rounded_yellow_bg"
             android:elevation="8dp"
-            android:layout_marginBottom="12dp">
+            android:orientation="vertical"
+            android:padding="12dp">
 
             <TextView
                 android:id="@+id/tvHeaderTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="🎮 SUPER JUMP GAME! 🌟"
-                android:textColor="#FF4081"
-                android:textSize="24sp"
-                android:textStyle="bold"
+                android:layout_marginBottom="8dp"
                 android:gravity="center"
                 android:shadowColor="#000000"
                 android:shadowDx="2"
                 android:shadowDy="2"
                 android:shadowRadius="4"
-                android:layout_marginBottom="8dp" />
+                android:text="🎮 SUPER JUMP GAME! 🌟"
+                android:textColor="#FF4081"
+                android:textSize="24sp"
+                android:textStyle="bold" />
 
             <!-- Colorful Control Buttons Row 1 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
+                android:layout_marginBottom="6dp"
                 android:gravity="center"
-                android:layout_marginBottom="6dp">
+                android:orientation="horizontal">
 
                 <Button
                     android:id="@+id/btnGyroToggle"
                     android:layout_width="0dp"
                     android:layout_height="45dp"
+                    android:layout_marginEnd="6dp"
                     android:layout_weight="1"
-                    android:text="🎯 Sensor"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:textColor="#FFFFFF"
                     android:background="@drawable/modern_button_primary"
                     android:elevation="4dp"
-                    android:layout_marginEnd="6dp" />
+                    android:text="🎯 Sensor"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
 
                 <Button
                     android:id="@+id/hideLEDView"
                     android:layout_width="0dp"
                     android:layout_height="45dp"
+                    android:layout_marginEnd="6dp"
                     android:layout_weight="1"
-                    android:text="💡 Lights"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:textColor="#FFFFFF"
                     android:background="@drawable/modern_button_secondary"
                     android:elevation="4dp"
-                    android:layout_marginEnd="6dp" />
+                    android:text="💡 Lights"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
 
                 <Button
                     android:id="@+id/btnLogin"
                     android:layout_width="0dp"
                     android:layout_height="45dp"
                     android:layout_weight="1"
-                    android:text="👤 Login"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:textColor="#FFFFFF"
                     android:background="@drawable/modern_button_secondary"
-                    android:elevation="4dp" />
+                    android:elevation="4dp"
+                    android:text="👤 Login"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
             </LinearLayout>
 
             <!-- Control Buttons Row 2 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
+                android:layout_marginBottom="6dp"
                 android:gravity="center"
-                android:layout_marginBottom="6dp">
+                android:orientation="horizontal">
 
                 <Switch
                     android:id="@+id/switchMode"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="🎪 Production"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:textColor="#FF4081"
                     android:paddingLeft="8dp"
-                    android:paddingRight="8dp" />
+                    android:paddingRight="8dp"
+                    android:text="🎪 Production"
+                    android:textColor="#FF4081"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
 
                 <Button
                     android:id="@+id/btnToggleAutoDetection"
                     android:layout_width="0dp"
                     android:layout_height="45dp"
                     android:layout_weight="1"
-                    android:text="🤖 Auto: ON"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:textColor="#FFFFFF"
                     android:background="@drawable/modern_button_secondary"
-                    android:elevation="4dp" />
+                    android:elevation="4dp"
+                    android:text="🤖 Auto: ON"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
             </LinearLayout>
         </LinearLayout>
 
@@ -142,7 +142,7 @@
             android:layout_weight="1"
             android:minHeight="350dp"
             android:layout_marginBottom="12dp"
-            android:background="#00BCD4"
+            android:background="@drawable/rounded_cyan_bg"
             android:elevation="8dp"
             android:padding="16dp">
 
@@ -208,7 +208,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
-            android:background="#9C27B0"
+            android:background="@drawable/rounded_purple_bg"
             android:orientation="vertical"
             android:padding="14dp"
             android:elevation="6dp">
