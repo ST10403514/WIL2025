@@ -8,12 +8,10 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -32,15 +30,18 @@ public class DevicesFragment extends ListFragment {
     private final ArrayList<BluetoothDevice> listItems = new ArrayList<>();
     private ArrayAdapter<BluetoothDevice> listAdapter;
     ActivityResultLauncher<String> requestBluetoothPermissionLauncherForRefresh;
-    private Menu menu;
+    private Button btnBluetoothSettings;
+    private Button btnRefreshDevices;
     private boolean permissionMissing;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setHasOptionsMenu(true);
+        setHasOptionsMenu(false); // Disable options menu since we're using buttons now
+
         if(getActivity().getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH))
             bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
         listAdapter = new ArrayAdapter<BluetoothDevice>(getActivity(), 0, listItems) {
             @NonNull
             @Override
@@ -51,11 +52,12 @@ public class DevicesFragment extends ListFragment {
                 TextView text1 = view.findViewById(R.id.text1);
                 TextView text2 = view.findViewById(R.id.text2);
                 @SuppressLint("MissingPermission") String deviceName = device.getName();
-                text1.setText(deviceName);
+                text1.setText(deviceName != null ? deviceName : "Unknown Device");
                 text2.setText(device.getAddress());
                 return view;
             }
         };
+
         requestBluetoothPermissionLauncherForRefresh = registerForActivityResult(
                 new ActivityResultContracts.RequestPermission(),
                 granted -> BluetoothUtil.onPermissionsResult(this, granted, this::refresh));
@@ -65,21 +67,38 @@ public class DevicesFragment extends ListFragment {
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         setListAdapter(null);
+
+        // Inflate header with buttons
         View header = getActivity().getLayoutInflater().inflate(R.layout.device_list_header, null, false);
         getListView().addHeaderView(header, null, false);
-        setEmptyText("initializing...");
-        ((TextView) getListView().getEmptyView()).setTextSize(18);
-        setListAdapter(listAdapter);
-    }
 
-    @Override
-    public void onCreateOptionsMenu(@NonNull Menu menu, MenuInflater inflater) {
-        this.menu = menu;
-        inflater.inflate(R.menu.menu_devices, menu);
-        if(permissionMissing)
-            menu.findItem(R.id.bt_refresh).setVisible(true);
-        if(bluetoothAdapter == null)
-            menu.findItem(R.id.bt_settings).setEnabled(false);
+        // Set background color for the list
+        getListView().setBackgroundColor(0xFFFFE5B4); // Peach background
+        getListView().setDivider(null);
+        getListView().setDividerHeight(0);
+
+        // Initialize buttons from header
+        btnBluetoothSettings = header.findViewById(R.id.btnBluetoothSettings);
+        btnRefreshDevices = header.findViewById(R.id.btnRefreshDevices);
+
+        // Setup button click listeners
+        btnBluetoothSettings.setOnClickListener(v -> openBluetoothSettings());
+        btnRefreshDevices.setOnClickListener(v -> {
+            if(BluetoothUtil.hasPermissions(this, requestBluetoothPermissionLauncherForRefresh))
+                refresh();
+        });
+
+        // Disable Bluetooth settings button if adapter is null
+        if(bluetoothAdapter == null) {
+            btnBluetoothSettings.setEnabled(false);
+            btnBluetoothSettings.setAlpha(0.5f);
+        }
+
+        setEmptyText("Searching for devices...");
+        ((TextView) getListView().getEmptyView()).setTextSize(18);
+        ((TextView) getListView().getEmptyView()).setTextColor(0xFF2D3748);
+
+        setListAdapter(listAdapter);
     }
 
     @Override
@@ -88,21 +107,10 @@ public class DevicesFragment extends ListFragment {
         refresh();
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-        if (id == R.id.bt_settings) {
-            Intent intent = new Intent();
-            intent.setAction(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS);
-            startActivity(intent);
-            return true;
-        } else if (id == R.id.bt_refresh) {
-            if(BluetoothUtil.hasPermissions(this, requestBluetoothPermissionLauncherForRefresh))
-                refresh();
-            return true;
-        } else {
-            return super.onOptionsItemSelected(item);
-        }
+    private void openBluetoothSettings() {
+        Intent intent = new Intent();
+        intent.setAction(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS);
+        startActivity(intent);
     }
 
     @SuppressLint("MissingPermission")
@@ -111,9 +119,13 @@ public class DevicesFragment extends ListFragment {
         if(bluetoothAdapter != null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 permissionMissing = getActivity().checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED;
-                if(menu != null && menu.findItem(R.id.bt_refresh) != null)
-                    menu.findItem(R.id.bt_refresh).setVisible(permissionMissing);
+
+                // Update refresh button visibility based on permission
+                if(btnRefreshDevices != null) {
+                    btnRefreshDevices.setVisibility(permissionMissing ? View.VISIBLE : View.VISIBLE);
+                }
             }
+
             if(!permissionMissing) {
                 for (BluetoothDevice device : bluetoothAdapter.getBondedDevices())
                     if (device.getType() != BluetoothDevice.DEVICE_TYPE_LE)
@@ -121,14 +133,17 @@ public class DevicesFragment extends ListFragment {
                 Collections.sort(listItems, BluetoothUtil::compareTo);
             }
         }
+
+        // Update empty text based on state
         if(bluetoothAdapter == null)
-            setEmptyText("<bluetooth not supported>");
+            setEmptyText("Bluetooth not supported on this device");
         else if(!bluetoothAdapter.isEnabled())
-            setEmptyText("<bluetooth is disabled>");
+            setEmptyText("Please enable Bluetooth in settings");
         else if(permissionMissing)
-            setEmptyText("<permission missing, use REFRESH>");
+            setEmptyText("Permission needed - tap Refresh to grant");
         else
-            setEmptyText("<no bluetooth devices found>");
+            setEmptyText("No paired devices found\nPair devices in Bluetooth Settings");
+
         listAdapter.notifyDataSetChanged();
     }
 
@@ -139,6 +154,9 @@ public class DevicesFragment extends ListFragment {
         args.putString("device", device.getAddress());
         Fragment fragment = new TerminalFragment();
         fragment.setArguments(args);
-        getParentFragmentManager().beginTransaction().replace(R.id.fragment, fragment, "terminal").addToBackStack(null).commit();
+        getParentFragmentManager().beginTransaction()
+                .replace(R.id.fragment, fragment, "terminal")
+                .addToBackStack(null)
+                .commit();
     }
 }
