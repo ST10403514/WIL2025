@@ -32,6 +32,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -45,17 +46,12 @@ import android.content.pm.PackageManager;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.engine.DiskCacheStrategy;
-
 import java.util.ArrayDeque;
 import java.util.Arrays;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-
-import android.view.ViewGroup;
 
 public class TerminalFragment extends Fragment implements ServiceConnection, SerialListener {
 
@@ -66,6 +62,11 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private String deviceAddress;
     private SerialService service;
     private SensorMode currentSensorMode = SensorMode.AUTO_DETECT;
+
+    // Add AI classifier
+    private AIMovementClassifier aiClassifier;
+    private Button btnTestAI;
+    private TextView tvAIStatus;
 
     private TextView receiveText;
     private Connected connected = Connected.False;
@@ -91,11 +92,19 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private String selectedMovement = null;
     private boolean isManualModeActive = false;
 
-    // Achievement system
+    // Debounce mechanism to prevent multiple detections
+    private long lastMovementTime = 0;
+    private static final long MOVEMENT_COOLDOWN = 1500; // 1.5 seconds between movements
+
+    // Achievement system - NEW THRESHOLDS
+    private static final int ACHIEVEMENT_10 = 10;
+    private static final int ACHIEVEMENT_20 = 20;
+    private static final int ACHIEVEMENT_50 = 50;
     private static final int ACHIEVEMENT_100 = 100;
-    private static final int ACHIEVEMENT_500 = 500;
+    private boolean achievement10Shown = false;
+    private boolean achievement20Shown = false;
+    private boolean achievement50Shown = false;
     private boolean achievement100Shown = false;
-    private boolean achievement500Shown = false;
 
     // UI Elements
     private Button btnWhite, btnRed, btnBlue, btnGreen, btnTopaz, btnLilac;
@@ -120,8 +129,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         @Override
         public void run() {
             if (autoDetectionEnabled && currentSensorMode == SensorMode.AUTO_DETECT && connected == Connected.True) {
-                simulateAutoDetection();
-                autoDetectionHandler.postDelayed(this, 3000); // Check every 3 seconds
+                autoDetectionHandler.postDelayed(this, 5000); // Check every 5 seconds
             }
         }
     };
@@ -136,7 +144,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         deviceAddress = args != null ? args.getString("device") : null;
     }
 
-
     @Override
     public void onDestroy() {
         if (connected != Connected.False) disconnect();
@@ -144,6 +151,12 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         if (a != null) a.stopService(new Intent(a, SerialService.class));
         reconnectHandler.removeCallbacksAndMessages(null);
         autoDetectionHandler.removeCallbacksAndMessages(null);
+
+        // ADD THIS: Clean up AI classifier
+        if (aiClassifier != null) {
+            aiClassifier.close();
+        }
+
         super.onDestroy();
     }
 
@@ -201,7 +214,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             }
         }
 
-        // Start auto-detection if enabled
         if (currentSensorMode == SensorMode.AUTO_DETECT) {
             startAutoDetection();
         }
@@ -242,6 +254,19 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_terminal, container, false);
 
+        // Initialize AI classifier
+        aiClassifier = new AIMovementClassifier(getActivity());
+
+        // Find AI test button and status (you'll need to add these to your XML)
+        btnTestAI = view.findViewById(R.id.btnTestAI);
+        tvAIStatus = view.findViewById(R.id.tvAIStatus);
+
+        if (btnTestAI != null) {
+            btnTestAI.setOnClickListener(v -> testAIClassifier());
+        }
+
+        updateAIStatus();
+
         // Initialize UI elements
         receiveText = view.findViewById(R.id.receive_text);
         btnWhite = view.findViewById(R.id.btnWhite);
@@ -257,6 +282,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         btnMusicPlayer = view.findViewById(R.id.btnMusicPlayer);
         ivCharacterPlaceholder = view.findViewById(R.id.ivCharacterPlaceholder);
 
+
         vvMovementVideo = view.findViewById(R.id.vvMovementVideo);
         tvJumpLeft = view.findViewById(R.id.tvJumpLeft);
         tvJumpRight = view.findViewById(R.id.tvJumpRight);
@@ -265,22 +291,22 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         tvLastMovement = view.findViewById(R.id.tvLastMovement);
         tvAchievementBadge = view.findViewById(R.id.tvAchievementBadge);
 
-        // LED Button Listeners
-        btnWhite.setOnClickListener(v -> send("w"));
-        btnRed.setOnClickListener(v -> send("r"));
-        btnBlue.setOnClickListener(v -> send("b"));
-        btnGreen.setOnClickListener(v -> send("g"));
-        btnTopaz.setOnClickListener(v -> send("t"));
-        btnLilac.setOnClickListener(v -> send("l"));
-        btnRainbow.setOnClickListener(v -> send("a"));
-        btnSeizureMode.setOnClickListener(v -> send("m"));
-        btnLEDOff.setOnClickListener(v -> send("o"));
+        // LED Button Listeners - Only send if connected
+        btnWhite.setOnClickListener(v -> sendIfConnected("w"));
+        btnRed.setOnClickListener(v -> sendIfConnected("r"));
+        btnBlue.setOnClickListener(v -> sendIfConnected("b"));
+        btnGreen.setOnClickListener(v -> sendIfConnected("g"));
+        btnTopaz.setOnClickListener(v -> sendIfConnected("t"));
+        btnLilac.setOnClickListener(v -> sendIfConnected("l"));
+        btnRainbow.setOnClickListener(v -> sendIfConnected("a"));
+        btnSeizureMode.setOnClickListener(v -> sendIfConnected("m"));
+        btnLEDOff.setOnClickListener(v -> sendIfConnected("o"));
 
         // Mode Toggle Button
         btnModeToggle.setOnClickListener(v -> toggleSensorMode());
         updateModeToggleButton();
 
-        // Music Player Button - Open music app chooser
+        // Music Player Button
         btnMusicPlayer.setOnClickListener(v -> openMusicAppChooser());
 
         // Movement Selection Buttons
@@ -295,6 +321,158 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         btnJumpFrontSelect.setOnClickListener(v -> selectMovement("FORWARD", "video_up"));
 
         return view;
+    }
+
+    // ADD THIS METHOD: Test AI Classifier
+    private void testAIClassifier() {
+        Log.d("TerminalFragment", "🧪 Testing AI Classifier...");
+
+        if (aiClassifier == null) {
+            showAITestResult("❌ AI Classifier is null");
+            return;
+        }
+
+        if (!aiClassifier.isModelLoaded()) {
+            showAITestResult("❌ AI Model failed to load");
+            return;
+        }
+
+        // Test with some sample sensor data that should trigger different activities
+        String[] testMovements = {
+                "Test 1 - Walking (low values)",
+                "Test 2 - Running (medium values)",
+                "Test 3 - Boxing (high X values)",
+                "Test 4 - Clapping (random values)"
+        };
+
+        float[][] testData = {
+                {0.5f, 0.3f, 0.2f},  // Walking
+                {1.5f, 1.2f, 0.8f},  // Running
+                {3.0f, 0.5f, 0.3f},  // Boxing (high X)
+                {0.8f, 0.8f, 0.8f}   // Clapping
+        };
+
+        StringBuilder results = new StringBuilder("🧪 AI Test Results:\n");
+
+        for (int i = 0; i < testData.length; i++) {
+            String result = aiClassifier.processSensorData(testData[i][0], testData[i][1], testData[i][2]);
+            results.append(testMovements[i]).append(": ").append(result).append("\n");
+
+            // Add some delay between tests to see progress
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        showAITestResult(results.toString());
+        Log.d("TerminalFragment", results.toString());
+    }
+
+    // ADD THIS METHOD: Show AI Test Results
+    private void showAITestResult(String message) {
+        Activity activity = getActivity();
+        if (activity != null) {
+            activity.runOnUiThread(() -> {
+                Toast.makeText(activity, message, Toast.LENGTH_LONG).show();
+
+                // Also update status text if available
+                if (tvAIStatus != null) {
+                    tvAIStatus.setText(message);
+                }
+
+                Log.d("TerminalFragment", "AI Test: " + message);
+            });
+        }
+    }
+
+    // ADD THIS METHOD: Update AI Status Display
+    private void updateAIStatus() {
+        if (aiClassifier != null) {
+            String status = aiClassifier.isModelLoaded() ?
+                    "✅ AI Model Loaded" : "❌ AI Model Failed";
+
+            if (tvAIStatus != null) {
+                tvAIStatus.setText(status);
+            }
+
+            Log.d("TerminalFragment", "AI Status: " + status);
+
+            // Add detailed logging
+            if (!aiClassifier.isModelLoaded()) {
+                Log.e("TerminalFragment", "❌ AI MODEL FAILED TO LOAD - Check:");
+                Log.e("TerminalFragment", "   - Model file in assets folder");
+                Log.e("TerminalFragment", "   - TensorFlow Lite dependencies");
+                Log.e("TerminalFragment", "   - SELECT_TF_OPS in build.gradle");
+            }
+        } else {
+            Log.e("TerminalFragment", "❌ AI Classifier is NULL");
+        }
+    }
+    // ADD THIS METHOD: AI Processing
+    private void processWithAI(float ax, float ay, float az) {
+        if (aiClassifier != null && aiClassifier.isModelLoaded()) {
+            Log.d("TerminalFragment", "📊 Processing sensor data with AI - X: " +
+                    String.format("%.2f", ax) + " Y: " + String.format("%.2f", ay) + " Z: " + String.format("%.2f", az));
+
+            String detectedActivity = aiClassifier.processSensorData(ax, ay, az);
+
+            // Log the AI result for debugging
+            if (!detectedActivity.equals("collecting_data") &&
+                    !detectedActivity.equals("ai_not_loaded")) {
+                Log.d("TerminalFragment", "🎯 AI Detection: " + detectedActivity);
+            }
+
+            // Only handle confident detections
+            if (!detectedActivity.equals("collecting_data") &&
+                    !detectedActivity.equals("uncertain") &&
+                    !detectedActivity.equals("error") &&
+                    !detectedActivity.equals("ai_not_loaded")) {
+
+                handleAIDetection(detectedActivity);
+            }
+        }
+    }
+
+    // ADD THIS METHOD: AI Detection Handler
+    private void handleAIDetection(String activity) {
+        Log.i("TerminalFragment", "🎯 AI Detected: " + activity);
+
+        // Map AI activities to your existing movement handlers
+        switch (activity.toLowerCase()) {
+            case "walking":
+            case "running":
+                if (isManualModeActive && "FORWARD".equals(selectedMovement)) {
+                    handleForwardMovement();
+                }
+                break;
+            case "boxing":
+                // Boxing could trigger left/right movements
+                if (isManualModeActive) {
+                    if ("LEFT".equals(selectedMovement)) handleLeftMovement();
+                    else if ("RIGHT".equals(selectedMovement)) handleRightMovement();
+                }
+                break;
+            case "clapping":
+                // Special event for clapping
+                sendIfConnected("a"); // Rainbow mode for celebration
+                Toast.makeText(getContext(), "👏 Clapping detected!", Toast.LENGTH_SHORT).show();
+                break;
+            case "standing up":
+                if (isManualModeActive && "UP".equals(selectedMovement)) {
+                    handleForwardMovement();
+                }
+                break;
+            case "sitting down":
+                if (isManualModeActive && "BACK".equals(selectedMovement)) {
+                    handleBackMovement();
+                }
+                break;
+        }
+
+        // Update UI with AI detection
+        updateLastMovementText("🤖 AI: " + activity.toUpperCase(), "#FF6B6B");
     }
 
     private void selectMovement(String movement, String videoFile) {
@@ -338,15 +516,16 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
 
     private void updateModeToggleButton() {
         if (btnModeToggle != null) {
+            String aiStatus = (aiClassifier != null && aiClassifier.isModelLoaded()) ? " 🧠" : "";
             switch (currentSensorMode) {
                 case AUTO_DETECT:
-                    btnModeToggle.setText("🎯 Auto Detect");
+                    btnModeToggle.setText("🎯 Auto Detect" + aiStatus);
                     break;
                 case PHONE_GYRO:
-                    btnModeToggle.setText("📱 Phone Gyro");
+                    btnModeToggle.setText("📱 Phone Gyro" + aiStatus);
                     break;
                 case ESP32_ADXL345:
-                    btnModeToggle.setText("🔧 ESP32");
+                    btnModeToggle.setText("🔧 ESP32" + aiStatus);
                     break;
             }
         }
@@ -361,7 +540,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             Log.i("TerminalFragment", "🎵 Opening music app chooser");
         } catch (Exception e) {
             try {
-                // Fallback: open any audio player
                 Intent intent = new Intent(Intent.ACTION_VIEW);
                 intent.setType("audio/*");
                 startActivity(Intent.createChooser(intent, "Choose Music App 🎵"));
@@ -371,11 +549,10 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         }
     }
 
-    // Auto-detection methods
     private void startAutoDetection() {
         autoDetectionEnabled = true;
         autoDetectionHandler.removeCallbacks(autoDetectionRunnable);
-        autoDetectionHandler.postDelayed(autoDetectionRunnable, 2000); // Start after 2 seconds
+        autoDetectionHandler.postDelayed(autoDetectionRunnable, 2000);
         Log.i("TerminalFragment", "🎯 Auto-detection started");
     }
 
@@ -385,32 +562,12 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         Log.i("TerminalFragment", "🎯 Auto-detection stopped");
     }
 
-    private void simulateAutoDetection() {
-        if (!isManualModeActive && connected == Connected.True) {
-            // Simulate random movement detection for demo purposes
-            String[] movements = {"LEFT", "RIGHT", "UP", "FORWARD", "BACK"};
-            String randomMovement = movements[(int) (Math.random() * movements.length)];
-
-            // Only trigger occasionally (20% chance)
-            if (Math.random() < 0.2) {
-                switch (randomMovement) {
-                    case "LEFT":
-                        handleLeftMovement();
-                        break;
-                    case "RIGHT":
-                        handleRightMovement();
-                        break;
-                    case "UP":
-                    case "FORWARD":
-                        handleForwardMovement();
-                        break;
-                    case "BACK":
-                        handleBackMovement();
-                        break;
-                }
-                Log.i("TerminalFragment", "🎯 Auto-detected: " + randomMovement);
-            }
+    // Helper method to send only if connected
+    private void sendIfConnected(String str) {
+        if (connected == Connected.True && service != null) {
+            send(str);
         }
+        // Don't show toast if not connected - user is just changing LED colors
     }
 
     @Override
@@ -508,10 +665,8 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     }
 
     private void send(String str) {
-        Activity a = getActivity();
-        if(connected != Connected.True || a == null || service == null) {
-            if (a != null) Toast.makeText(a, "not connected", Toast.LENGTH_SHORT).show();
-            return;
+        if(connected != Connected.True || service == null) {
+            return; // Silently fail if not connected
         }
         try {
             byte[] data = (str + newline).getBytes();
@@ -555,6 +710,10 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             float accelX = Float.parseFloat(parts[0].trim());
             float accelY = Float.parseFloat(parts[1].trim());
             float accelZ = Float.parseFloat(parts[2].trim());
+
+            // ✅ ADD THIS: Process with AI
+            processWithAI(accelX, accelY, accelZ);
+
             processAccelerometerMovement(accelX, accelY, accelZ);
         }
     }
@@ -583,6 +742,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private void processAccelerometerMovement(float accelX, float accelY, float accelZ) {
         final float ACCEL_THRESHOLD = 2.0f;
 
+        // Your existing logic
         if (Math.abs(accelX) > ACCEL_THRESHOLD) {
             if (accelX > ACCEL_THRESHOLD) handleRightMovement();
             else handleLeftMovement();
@@ -590,39 +750,75 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             if (accelY > ACCEL_THRESHOLD) handleForwardMovement();
             else handleBackMovement();
         }
+
+        // NEW: Also send to AI classifier - ADD THIS LINE
+        processWithAI(accelX, accelY, accelZ);
     }
 
+    // FIXED: Only increment score for SELECTED movement
     private void handleLeftMovement() {
+        // Check cooldown
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastMovementTime < MOVEMENT_COOLDOWN) {
+            return; // Too soon, ignore
+        }
+
+        // Only process if manual mode is active OR auto-detect mode
         if (!isManualModeActive && currentSensorMode != SensorMode.AUTO_DETECT) return;
+
+        // Check if this is the selected movement
+        if (selectedMovement != null && !selectedMovement.equals("LEFT")) {
+            return; // Wrong movement, ignore
+        }
+
+        lastMovementTime = currentTime;
         jumpLeft++;
         updateJumpLabels();
         updateLastMovementText("⬅️ LEFT MOVEMENT", "#667eea");
         saveJumpDataToAPI();
-        send("b");
+        sendIfConnected("b");
         showMovementVideo("video_left");
         checkMovementCompletion("LEFT");
         checkAchievements();
     }
 
     private void handleRightMovement() {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastMovementTime < MOVEMENT_COOLDOWN) return;
+
         if (!isManualModeActive && currentSensorMode != SensorMode.AUTO_DETECT) return;
+
+        if (selectedMovement != null && !selectedMovement.equals("RIGHT")) {
+            return;
+        }
+
+        lastMovementTime = currentTime;
         jumpRight++;
         updateJumpLabels();
         updateLastMovementText("➡️ RIGHT MOVEMENT", "#667eea");
         saveJumpDataToAPI();
-        send("g");
+        sendIfConnected("g");
         showMovementVideo("video_right");
         checkMovementCompletion("RIGHT");
         checkAchievements();
     }
 
     private void handleForwardMovement() {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastMovementTime < MOVEMENT_COOLDOWN) return;
+
         if (!isManualModeActive && currentSensorMode != SensorMode.AUTO_DETECT) return;
+
+        if (selectedMovement != null && !selectedMovement.equals("UP") && !selectedMovement.equals("FORWARD")) {
+            return;
+        }
+
+        lastMovementTime = currentTime;
         jumpUp++;
         updateJumpLabels();
         updateLastMovementText("⬆️ FORWARD MOVEMENT", "#667eea");
         saveJumpDataToAPI();
-        send("w");
+        sendIfConnected("w");
         showMovementVideo("video_up");
         checkMovementCompletion("UP");
         checkMovementCompletion("FORWARD");
@@ -630,12 +826,21 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     }
 
     private void handleBackMovement() {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastMovementTime < MOVEMENT_COOLDOWN) return;
+
         if (!isManualModeActive && currentSensorMode != SensorMode.AUTO_DETECT) return;
+
+        if (selectedMovement != null && !selectedMovement.equals("BACK")) {
+            return;
+        }
+
+        lastMovementTime = currentTime;
         jumpBack++;
         updateJumpLabels();
         updateLastMovementText("⬇️ BACK MOVEMENT", "#667eea");
         saveJumpDataToAPI();
-        send("r");
+        sendIfConnected("r");
         showMovementVideo("video_up");
         checkMovementCompletion("BACK");
         checkAchievements();
@@ -649,28 +854,33 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         }
     }
 
+    // FIXED: New achievement thresholds at 10, 20, 50, 100
     private void checkAchievements() {
         int totalMovements = jumpLeft + jumpRight + jumpUp + jumpBack;
 
-        if (totalMovements >= ACHIEVEMENT_500 && !achievement500Shown) {
-            showAchievement("🏆 LEGEND STATUS! 🏆", "500 movements achieved!", "🌟🌟🌟🌟🌟");
-            achievement500Shown = true;
-        } else if (totalMovements >= ACHIEVEMENT_100 && !achievement100Shown) {
-            showAchievement("🎖️ CENTURY CLUB! 🎖️", "100 movements achieved!", "⭐⭐⭐");
+        if (totalMovements >= ACHIEVEMENT_100 && !achievement100Shown) {
+            showAchievement("🏆 LEGEND! 🏆", "100 movements achieved!", "🌟🌟🌟🌟🌟");
             achievement100Shown = true;
+        } else if (totalMovements >= ACHIEVEMENT_50 && !achievement50Shown) {
+            showAchievement("🎖️ CHAMPION! 🎖️", "50 movements achieved!", "⭐⭐⭐⭐");
+            achievement50Shown = true;
+        } else if (totalMovements >= ACHIEVEMENT_20 && !achievement20Shown) {
+            showAchievement("🏅 PRO MOVER! 🏅", "20 movements achieved!", "⭐⭐⭐");
+            achievement20Shown = true;
+        } else if (totalMovements >= ACHIEVEMENT_10 && !achievement10Shown) {
+            showAchievement("🎯 RISING STAR! 🎯", "10 movements achieved!", "⭐⭐");
+            achievement10Shown = true;
         }
     }
 
     private void showAchievement(String title, String message, String badge) {
         Activity a = getActivity();
         if (a != null) {
-            // Show badge on screen
             if (tvAchievementBadge != null) {
                 tvAchievementBadge.setText(badge + " " + title);
                 tvAchievementBadge.setVisibility(View.VISIBLE);
             }
 
-            // Show dialog
             AlertDialog.Builder builder = new AlertDialog.Builder(a);
             builder.setTitle(title)
                     .setMessage(message + "\n\nKeep moving!")
@@ -687,18 +897,14 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         if (vvMovementVideo != null && getContext() != null) {
             int resId = getResources().getIdentifier(videoFileName, "raw", getContext().getPackageName());
             if (resId != 0) {
-                // Hide placeholder and show video
                 if (ivCharacterPlaceholder != null) {
                     ivCharacterPlaceholder.setVisibility(View.GONE);
                 }
 
                 vvMovementVideo.setVisibility(View.VISIBLE);
-
-                // Set video URI
                 Uri videoUri = Uri.parse("android.resource://" + getContext().getPackageName() + "/" + resId);
                 vvMovementVideo.setVideoURI(videoUri);
 
-                // Set listener for when video is prepared
                 vvMovementVideo.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                     @Override
                     public void onPrepared(MediaPlayer mp) {
@@ -707,7 +913,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
                     }
                 });
 
-                // Set listener for when video finishes
                 vvMovementVideo.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
                     @Override
                     public void onCompletion(MediaPlayer mp) {
@@ -718,7 +923,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
                     }
                 });
 
-                // Handle errors
                 vvMovementVideo.setOnErrorListener(new MediaPlayer.OnErrorListener() {
                     @Override
                     public boolean onError(MediaPlayer mp, int what, int extra) {
@@ -760,8 +964,12 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
                 float x = event.values[0];
                 float y = event.values[1];
-                float threshold = 2.0f;
+                float z = event.values[2]; // Get Z axis too
 
+                // ✅ ADD THIS: Process with AI
+                processWithAI(x, y, z);
+
+                float threshold = 2.0f;
                 if (Math.abs(x) > threshold) {
                     if (x > 0) handleLeftMovement();
                     else handleRightMovement();
@@ -852,7 +1060,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         currentConnectAttempt = 0;
         isAutoConnecting = false;
 
-        // Start auto-detection if in auto mode
         if (currentSensorMode == SensorMode.AUTO_DETECT) {
             startAutoDetection();
         }
