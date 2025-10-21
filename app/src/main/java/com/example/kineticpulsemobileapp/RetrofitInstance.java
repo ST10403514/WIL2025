@@ -9,7 +9,8 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class RetrofitInstance {
 
     // Base URL for the API
-    private static final String BASE_URL = "https://kinecticpulseapi.onrender.com/";
+    // Change to your computer's IP address
+    private static final String BASE_URL = "http://192.168.1.100:5000/";
 
     // The Retrofit instance
     private static Retrofit retrofit;

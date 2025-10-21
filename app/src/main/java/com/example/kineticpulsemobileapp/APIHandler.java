@@ -125,13 +125,15 @@ class JumpDataRequest {
     private int leftJump;
     private int rightJump;
     private int middleJump;
+    private int jumpBack;
     private String uid;
 
     // Constructor
-    public JumpDataRequest(int leftJump, int rightJump, int middleJump, String uid) {
+    public JumpDataRequest(int leftJump, int rightJump, int middleJump, int jumpBack, String uid) {
         this.leftJump = leftJump;
         this.rightJump = rightJump;
         this.middleJump = middleJump;
+        this.jumpBack = jumpBack;  // This line must exist
         this.uid = uid;
     }
 
@@ -147,6 +149,11 @@ class JumpDataRequest {
     public int getMiddleJump() {
         return middleJump;
     }
+
+    public int getJumpBack() {
+        return jumpBack;
+    }
+
 
     public String getUid() {
         return uid;
@@ -164,6 +171,8 @@ class JumpDataRequest {
     public void setMiddleJump(int middleJump) {
         this.middleJump = middleJump;
     }
+
+    public void setJumpBack(int jumpBack) {this.jumpBack = jumpBack;}
 
     public void setUid(String uid) {
         this.uid = uid;

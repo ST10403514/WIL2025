@@ -2,6 +2,8 @@ package com.example.kineticpulsemobileapp;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
+
 import androidx.fragment.app.FragmentManager;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
@@ -9,6 +11,7 @@ import androidx.fragment.app.Fragment;
 public class MainActivity extends AppCompatActivity implements FragmentManager.OnBackStackChangedListener {
 
     private GyroManager gyroManager;
+    private DataSyncManager dataSyncManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -16,7 +19,6 @@ public class MainActivity extends AppCompatActivity implements FragmentManager.O
         setContentView(R.layout.activity_main);
 
         // No toolbar setup needed anymore!
-
         getSupportFragmentManager().addOnBackStackChangedListener(this);
         if (savedInstanceState == null)
             getSupportFragmentManager().beginTransaction().add(R.id.fragment, new DevicesFragment(), "devices").commit();
@@ -24,6 +26,15 @@ public class MainActivity extends AppCompatActivity implements FragmentManager.O
             onBackStackChanged();
 
         gyroManager = new GyroManager(getApplicationContext());
+
+        // Optional: Initialize DataSyncManager for app-level sync
+        dataSyncManager = new DataSyncManager(this);
+    }
+
+    public void showOfflineNotification() {
+        runOnUiThread(() -> {
+            Toast.makeText(this, "🔌 Working offline - data will sync when online", Toast.LENGTH_SHORT).show();
+        });
     }
 
     @Override

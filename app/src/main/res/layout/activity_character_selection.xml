@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFE5B4"
+    android:fillViewport="true">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="24dp"
+        android:paddingVertical="32dp">
+
+        <!-- Header Card -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/headerCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:elevation="12dp"
+            app:cardBackgroundColor="#FF6B35"
+            app:cardCornerRadius="25dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="24dp"
+                android:gravity="center">
+
+                <!-- Logo -->
+                <ImageView
+                    android:id="@+id/logoImageView"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:contentDescription="Pulse Logo"
+                    android:src="@drawable/pulse_logo"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- Title -->
+                <TextView
+                    android:id="@+id/titleTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="Choose Your Character"
+                    android:textColor="@android:color/white"
+                    android:textSize="28sp"
+                    android:textStyle="bold"
+                    android:shadowColor="#000000"
+                    android:shadowDx="2"
+                    android:shadowDy="2"
+                    android:shadowRadius="3" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Select your movement companion"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="4dp"
+                    android:shadowColor="#000000"
+                    android:shadowDx="1"
+                    android:shadowDy="1"
+                    android:shadowRadius="2" />
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Character Selection Card -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/characterCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:elevation="12dp"
+            app:cardBackgroundColor="#4ECDC4"
+            app:cardCornerRadius="25dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/headerCard">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="24dp"
+                android:background="@android:color/white">
+
+                <!-- Character Grid -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:layout_marginBottom="30dp"
+                    android:weightSum="3">
+
+                    <!-- Lion Character -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="12dp">
+
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/lionCard"
+                            android:layout_width="120dp"
+                            android:layout_height="120dp"
+                            android:elevation="8dp"
+                            app:cardCornerRadius="25dp"
+                            app:cardBackgroundColor="#FFD700"
+                            app:cardElevation="8dp"
+                            android:background="@drawable/character_selected_border">
+
+                            <ImageView
+                                android:id="@+id/lion_image"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:src="@drawable/character_lion"
+                                android:scaleType="centerCrop"
+                                android:contentDescription="Lion character"
+                                android:padding="16dp"
+                                android:background="#FFD700" />
+
+                        </androidx.cardview.widget.CardView>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Leo the Lion"
+                            android:textColor="#2D3748"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:layout_marginTop="12dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Strong &amp; Bold"
+                            android:textColor="#FF6B35"
+                            android:textSize="13sp"
+                            android:textStyle="normal"
+                            android:gravity="center" />
+
+                    </LinearLayout>
+
+                    <!-- Boy Character -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="12dp">
+
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/boyCard"
+                            android:layout_width="120dp"
+                            android:layout_height="120dp"
+                            android:elevation="8dp"
+                            app:cardCornerRadius="25dp"
+                            app:cardBackgroundColor="#3498DB"
+                            app:cardElevation="8dp"
+                            android:background="@drawable/character_selected_border">
+
+                            <ImageView
+                                android:id="@+id/boy_image"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:src="@drawable/character_boy"
+                                android:scaleType="centerCrop"
+                                android:contentDescription="Boy character"
+                                android:padding="16dp"
+                                android:background="#3498DB" />
+
+                        </androidx.cardview.widget.CardView>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Max the Explorer"
+                            android:textColor="#2D3748"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:layout_marginTop="12dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Quick &amp; Agile"
+                            android:textColor="#FF6B35"
+                            android:textSize="13sp"
+                            android:textStyle="normal"
+                            android:gravity="center" />
+
+                    </LinearLayout>
+
+                    <!-- Girl Character -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="12dp">
+
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/girlCard"
+                            android:layout_width="120dp"
+                            android:layout_height="120dp"
+                            android:elevation="8dp"
+                            app:cardCornerRadius="25dp"
+                            app:cardBackgroundColor="#9B59B6"
+                            app:cardElevation="8dp"
+                            android:background="@drawable/character_selected_border">
+
+                            <ImageView
+                                android:id="@+id/girl_image"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:src="@drawable/character_girl"
+                                android:scaleType="centerCrop"
+                                android:contentDescription="Girl character"
+                                android:padding="16dp"
+                                android:background="#9B59B6" />
+
+                        </androidx.cardview.widget.CardView>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Luna the Dancer"
+                            android:textColor="#2D3748"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:layout_marginTop="12dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Graceful &amp; Energetic"
+                            android:textColor="#FF6B35"
+                            android:textSize="13sp"
+                            android:textStyle="normal"
+                            android:gravity="center" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <!-- Selection Instructions -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Tap on a character to select your movement companion. Each character has unique animations!"
+                    android:textColor="#2D3748"
+                    android:textSize="14sp"
+                    android:textStyle="normal"
+                    android:gravity="center"
+                    android:lineSpacingExtra="4sp"
+                    android:layout_marginBottom="24dp"
+                    android:paddingHorizontal="16dp" />
+
+                <!-- Confirm Button -->
+                <Button
+                    android:id="@+id/confirm_button"
+                    android:layout_width="match_parent"
+                    android:layout_height="65dp"
+                    android:background="#2ECC71"
+                    android:elevation="6dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="START THE JOURNEY!"
+                    android:textAllCaps="false"
+                    android:textColor="@android:color/white"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:shadowColor="#000000"
+                    android:shadowDx="2"
+                    android:shadowDy="2"
+                    android:shadowRadius="3" />
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Footer Card -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/footerCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="24dp"
+            android:elevation="8dp"
+            app:cardBackgroundColor="#F7DC6F"
+            app:cardCornerRadius="20dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/characterCard">
+
+            <TextView
+                android:id="@+id/footerTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp"
+                android:text="Your adventure awaits!"
+                android:textColor="#2D3748"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:shadowColor="#FFFFFF"
+                android:shadowDx="1"
+                android:shadowDy="1"
+                android:shadowRadius="2" />
+
+        </androidx.cardview.widget.CardView>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</ScrollView>

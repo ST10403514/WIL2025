@@ -13,7 +13,7 @@
         android:orientation="vertical"
         android:padding="12dp">
 
-        <!-- Super Fun Header with Character -->
+        <!-- Super Fun Header -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -29,7 +29,6 @@
                 android:padding="16dp"
                 android:background="@drawable/modern_gradient_background">
 
-                <!-- App Title with Fun Emoji -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -56,7 +55,6 @@
                     android:fontFamily="sans-serif-medium"
                     android:layout_marginBottom="12dp" />
 
-                <!-- Control Buttons - Bigger and More Playful -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -96,29 +94,28 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- HUGE Animation Display with Fun Border -->
+        <!-- Character Display -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
-            android:layout_height="420dp"
+            android:layout_height="450dp"
             android:layout_marginBottom="12dp"
             android:elevation="12dp"
             app:cardBackgroundColor="#4ECDC4"
             app:cardCornerRadius="30dp">
 
             <FrameLayout
-                android:id="@+id/movementContainer"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:padding="8dp">
 
-                <!-- Colorful Background Pattern -->
+                <!-- Background -->
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:background="#FFFFFF"
                     android:layout_margin="4dp" />
 
-                <!-- Dancing Kid Placeholder/Character Area -->
+                <!-- Main Content -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
@@ -126,7 +123,9 @@
                     android:gravity="center"
                     android:padding="16dp">
 
+                    <!-- Character Name -->
                     <TextView
+                        android:id="@+id/tvCharacterName"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="✨ WATCH ME DANCE! ✨"
@@ -139,28 +138,33 @@
                         android:shadowDx="1"
                         android:shadowDy="1"
                         android:shadowRadius="2"
-                        android:layout_marginTop="4dp"
-                        android:layout_marginBottom="18dp" />
+                        android:layout_marginBottom="12dp" />
 
-                    <!-- Main Video Display -->
-                    <VideoView
-                        android:id="@+id/vvMovementVideo"
+                    <!-- Video/Character Container - CENTERED -->
+                    <FrameLayout
                         android:layout_width="match_parent"
                         android:layout_height="0dp"
                         android:layout_weight="1"
-                        android:visibility="gone" />
+                        android:gravity="center">
 
-                    <!-- Placeholder Character (when no animation) -->
-                    <ImageView
-                        android:id="@+id/ivCharacterPlaceholder"
-                        android:layout_width="match_parent"
-                        android:layout_height="0dp"
-                        android:layout_weight="1"
-                        android:src="@drawable/character_placeholder"
-                        android:scaleType="fitCenter"
-                        android:gravity="center"
-                        android:layout_marginTop="-20dp"
-                        android:layout_marginBottom="-20dp" />
+                        <!-- Main Video Display - CENTERED -->
+                        <VideoView
+                            android:id="@+id/vvMovementVideo"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:visibility="gone" />
+
+                        <!-- Placeholder Character - CENTERED -->
+                        <ImageView
+                            android:id="@+id/ivCharacterPlaceholder"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:src="@drawable/character_placeholder"
+                            android:scaleType="fitCenter" />
+
+                    </FrameLayout>
 
                     <!-- Status Text -->
                     <TextView
@@ -169,11 +173,10 @@
                         android:layout_height="wrap_content"
                         android:text="🚀 Get Ready to Move! 🚀"
                         android:textColor="#2D3748"
-                        android:textSize="20sp"
+                        android:textSize="18sp"
                         android:textStyle="bold"
                         android:gravity="center"
-                        android:layout_marginTop="18dp"
-                        android:layout_marginBottom="8dp"
+                        android:layout_marginTop="12dp"
                         android:fontFamily="sans-serif-medium"
                         android:shadowColor="#FFFFFF"
                         android:shadowDx="1"
@@ -183,502 +186,13 @@
             </FrameLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Score Board - Colorful and Exciting -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:elevation="12dp"
-            app:cardBackgroundColor="#F7DC6F"
-            app:cardCornerRadius="25dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="⭐ MY SUPER SCORE ⭐"
-                    android:textColor="#E74C3C"
-                    android:textSize="22sp"
-                    android:textStyle="bold"
-                    android:gravity="center"
-                    android:fontFamily="sans-serif-medium"
-                    android:shadowColor="#000000"
-                    android:shadowDx="1"
-                    android:shadowDy="1"
-                    android:shadowRadius="2"
-                    android:layout_marginBottom="12dp" />
-
-                <!-- Achievement Badge -->
-                <TextView
-                    android:id="@+id/tvAchievementBadge"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text=""
-                    android:textColor="#E74C3C"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:gravity="center"
-                    android:layout_marginBottom="8dp"
-                    android:visibility="gone"
-                    android:fontFamily="sans-serif-medium" />
-
-                <!-- Counter Grid - BIG and COLORFUL -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:weightSum="4">
-
-                    <!-- Left Counter -->
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:gravity="center"
-                        android:padding="12dp"
-                        android:background="#E74C3C"
-                        android:layout_margin="3dp">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="⬅️"
-                            android:textSize="32sp" />
-                        <TextView
-                            android:id="@+id/tvJumpLeft"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="0"
-                            android:textColor="#FFFFFF"
-                            android:textSize="28sp"
-                            android:textStyle="bold"
-                            android:fontFamily="sans-serif-medium"
-                            android:shadowColor="#000000"
-                            android:shadowDx="1"
-                            android:shadowDy="1"
-                            android:shadowRadius="2" />
-                    </LinearLayout>
-
-                    <!-- Right Counter -->
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:gravity="center"
-                        android:padding="12dp"
-                        android:background="#3498DB"
-                        android:layout_margin="3dp">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="➡️"
-                            android:textSize="32sp" />
-                        <TextView
-                            android:id="@+id/tvJumpRight"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="0"
-                            android:textColor="#FFFFFF"
-                            android:textSize="28sp"
-                            android:textStyle="bold"
-                            android:fontFamily="sans-serif-medium"
-                            android:shadowColor="#000000"
-                            android:shadowDx="1"
-                            android:shadowDy="1"
-                            android:shadowRadius="2" />
-                    </LinearLayout>
-
-                    <!-- Up Counter -->
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:gravity="center"
-                        android:padding="12dp"
-                        android:background="#2ECC71"
-                        android:layout_margin="3dp">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="⬆️"
-                            android:textSize="32sp" />
-                        <TextView
-                            android:id="@+id/tvJumpMiddle"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="0"
-                            android:textColor="#FFFFFF"
-                            android:textSize="28sp"
-                            android:textStyle="bold"
-                            android:fontFamily="sans-serif-medium"
-                            android:shadowColor="#000000"
-                            android:shadowDx="1"
-                            android:shadowDy="1"
-                            android:shadowRadius="2" />
-                    </LinearLayout>
-
-                    <!-- Back Counter -->
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:gravity="center"
-                        android:padding="12dp"
-                        android:background="#9B59B6"
-                        android:layout_margin="3dp">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="⬇️"
-                            android:textSize="32sp" />
-                        <TextView
-                            android:id="@+id/tvJumpBack"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="0"
-                            android:textColor="#FFFFFF"
-                            android:textSize="28sp"
-                            android:textStyle="bold"
-                            android:fontFamily="sans-serif-medium"
-                            android:shadowColor="#000000"
-                            android:shadowDx="1"
-                            android:shadowDy="1"
-                            android:shadowRadius="2" />
-                    </LinearLayout>
-                </LinearLayout>
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-        <!-- Movement Selection - Big Colorful Arrows -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:elevation="12dp"
-            app:cardBackgroundColor="#FF6B35"
-            app:cardCornerRadius="25dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="🎯 PICK YOUR MOVE! 🎯"
-                    android:textColor="#FFFFFF"
-                    android:textSize="22sp"
-                    android:textStyle="bold"
-                    android:gravity="center"
-                    android:fontFamily="sans-serif-medium"
-                    android:shadowColor="#000000"
-                    android:shadowDx="2"
-                    android:shadowDy="2"
-                    android:shadowRadius="3"
-                    android:layout_marginBottom="12dp" />
-
-                <!-- Giant Arrow Buttons -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:weightSum="4"
-                    android:layout_marginBottom="8dp">
-
-                    <Button
-                        android:id="@+id/btnJumpLeftSelect"
-                        android:layout_width="0dp"
-                        android:layout_height="90dp"
-                        android:layout_weight="1"
-                        android:layout_margin="4dp"
-                        android:text="⬅️"
-                        android:textSize="42sp"
-                        android:background="#E74C3C"
-                        android:textColor="@android:color/white"
-                        android:elevation="8dp" />
-
-                    <Button
-                        android:id="@+id/btnJumpRightSelect"
-                        android:layout_width="0dp"
-                        android:layout_height="90dp"
-                        android:layout_weight="1"
-                        android:layout_margin="4dp"
-                        android:text="➡️"
-                        android:textSize="42sp"
-                        android:background="#3498DB"
-                        android:textColor="@android:color/white"
-                        android:elevation="8dp" />
-
-                    <Button
-                        android:id="@+id/btnJumpUpSelect"
-                        android:layout_width="0dp"
-                        android:layout_height="90dp"
-                        android:layout_weight="1"
-                        android:layout_margin="4dp"
-                        android:text="⬆️"
-                        android:textSize="42sp"
-                        android:background="#2ECC71"
-                        android:textColor="@android:color/white"
-                        android:elevation="8dp" />
-
-                    <Button
-                        android:id="@+id/btnJumpFrontSelect"
-                        android:layout_width="0dp"
-                        android:layout_height="90dp"
-                        android:layout_weight="1"
-                        android:layout_margin="4dp"
-                        android:text="⬇️"
-                        android:textSize="42sp"
-                        android:background="#9B59B6"
-                        android:textColor="@android:color/white"
-                        android:elevation="8dp" />
-                </LinearLayout>
-
-                <!-- Fun Labels -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:weightSum="4"
-                    android:gravity="center">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="LEFT"
-                        android:textColor="#FFFFFF"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:gravity="center"
-                        android:fontFamily="sans-serif-medium"
-                        android:shadowColor="#000000"
-                        android:shadowDx="1"
-                        android:shadowDy="1"
-                        android:shadowRadius="2" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="RIGHT"
-                        android:textColor="#FFFFFF"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:gravity="center"
-                        android:fontFamily="sans-serif-medium"
-                        android:shadowColor="#000000"
-                        android:shadowDx="1"
-                        android:shadowDy="1"
-                        android:shadowRadius="2" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="UP"
-                        android:textColor="#FFFFFF"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:gravity="center"
-                        android:fontFamily="sans-serif-medium"
-                        android:shadowColor="#000000"
-                        android:shadowDx="1"
-                        android:shadowDy="1"
-                        android:shadowRadius="2" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="DOWN"
-                        android:textColor="#FFFFFF"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:gravity="center"
-                        android:fontFamily="sans-serif-medium"
-                        android:shadowColor="#000000"
-                        android:shadowDx="1"
-                        android:shadowDy="1"
-                        android:shadowRadius="2" />
-                </LinearLayout>
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-        <!-- Rainbow LED Colors Section -->
-        <androidx.cardview.widget.CardView
-            android:id="@+id/ledOptions"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:elevation="12dp"
-            app:cardBackgroundColor="#4ECDC4"
-            app:cardCornerRadius="25dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="🌈 MAGIC COLORS! 🌈"
-                    android:textColor="#FFFFFF"
-                    android:textSize="22sp"
-                    android:textStyle="bold"
-                    android:gravity="center"
-                    android:fontFamily="sans-serif-medium"
-                    android:shadowColor="#000000"
-                    android:shadowDx="2"
-                    android:shadowDy="2"
-                    android:shadowRadius="3"
-                    android:layout_marginBottom="12dp" />
-
-                <!-- First Color Row -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:weightSum="4"
-                    android:layout_marginBottom="8dp">
-
-                    <Button
-                        android:id="@+id/btnWhite"
-                        android:layout_width="0dp"
-                        android:layout_height="75dp"
-                        android:layout_weight="1"
-                        android:layout_margin="4dp"
-                        android:text="⚪"
-                        android:textSize="38sp"
-                        android:background="#FFFFFF"
-                        android:elevation="6dp" />
-
-                    <Button
-                        android:id="@+id/btnRed"
-                        android:layout_width="0dp"
-                        android:layout_height="75dp"
-                        android:layout_weight="1"
-                        android:layout_margin="4dp"
-                        android:text="🔴"
-                        android:textSize="38sp"
-                        android:background="#E74C3C"
-                        android:elevation="6dp" />
-
-                    <Button
-                        android:id="@+id/btnGreen"
-                        android:layout_width="0dp"
-                        android:layout_height="75dp"
-                        android:layout_weight="1"
-                        android:layout_margin="4dp"
-                        android:text="🟢"
-                        android:textSize="38sp"
-                        android:background="#2ECC71"
-                        android:elevation="6dp" />
-
-                    <Button
-                        android:id="@+id/btnBlue"
-                        android:layout_width="0dp"
-                        android:layout_height="75dp"
-                        android:layout_weight="1"
-                        android:layout_margin="4dp"
-                        android:text="🔵"
-                        android:textSize="38sp"
-                        android:background="#3498DB"
-                        android:elevation="6dp" />
-                </LinearLayout>
-
-                <!-- Second Color Row -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:weightSum="4"
-                    android:layout_marginBottom="12dp">
-
-                    <Button
-                        android:id="@+id/btnTopaz"
-                        android:layout_width="0dp"
-                        android:layout_height="75dp"
-                        android:layout_weight="1"
-                        android:layout_margin="4dp"
-                        android:text="🟡"
-                        android:textSize="38sp"
-                        android:background="#F7DC6F"
-                        android:elevation="6dp" />
-
-                    <Button
-                        android:id="@+id/btnLilac"
-                        android:layout_width="0dp"
-                        android:layout_height="75dp"
-                        android:layout_weight="1"
-                        android:layout_margin="4dp"
-                        android:text="🟣"
-                        android:textSize="38sp"
-                        android:background="#9B59B6"
-                        android:elevation="6dp" />
-
-                    <Button
-                        android:id="@+id/btnRainbow"
-                        android:layout_width="0dp"
-                        android:layout_height="75dp"
-                        android:layout_weight="1"
-                        android:layout_margin="4dp"
-                        android:text="🌈"
-                        android:textSize="38sp"
-                        android:background="@drawable/modern_gradient_background"
-                        android:elevation="6dp" />
-
-                    <Button
-                        android:id="@+id/btnLEDOff"
-                        android:layout_width="0dp"
-                        android:layout_height="75dp"
-                        android:layout_weight="1"
-                        android:layout_margin="4dp"
-                        android:text="⚫"
-                        android:textSize="38sp"
-                        android:background="#34495E"
-                        android:elevation="6dp" />
-                </LinearLayout>
-
-                <!-- GIANT Party Mode Button -->
-                <Button
-                    android:id="@+id/btnSeizureMode"
-                    android:layout_width="match_parent"
-                    android:layout_height="70dp"
-                    android:text="🎉 PARTY MODE! 🎉"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    android:textColor="@android:color/white"
-                    android:textAllCaps="false"
-                    android:fontFamily="sans-serif-medium"
-                    android:background="#FF6B35"
-                    android:shadowColor="#000000"
-                    android:shadowDx="2"
-                    android:shadowDy="2"
-                    android:shadowRadius="3"
-                    android:elevation="8dp" />
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-        <!-- AI Status Section -->
+        <!-- Score Board -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
             android:elevation="8dp"
-            app:cardBackgroundColor="#667eea"
+            app:cardBackgroundColor="#FFD166"
             app:cardCornerRadius="20dp">
 
             <LinearLayout
@@ -690,49 +204,463 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="🤖 AI STATUS"
+                    android:text="🏆 Score Board 🏆"
+                    android:textColor="#2D3748"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="12dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:weightSum="4">
+
+                    <!-- Left Jumps -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center">
+
+                        <TextView
+                            android:id="@+id/tvJumpLeft"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textColor="#E74C3C"
+                            android:textSize="28sp"
+                            android:textStyle="bold"
+                            android:fontFamily="sans-serif-medium" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="⬅️ Left"
+                            android:textColor="#2D3748"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Right Jumps -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center">
+
+                        <TextView
+                            android:id="@+id/tvJumpRight"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textColor="#2ECC71"
+                            android:textSize="28sp"
+                            android:textStyle="bold"
+                            android:fontFamily="sans-serif-medium" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="➡️ Right"
+                            android:textColor="#2D3748"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Up Jumps -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center">
+
+                        <TextView
+                            android:id="@+id/tvJumpMiddle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textColor="#3498DB"
+                            android:textSize="28sp"
+                            android:textStyle="bold"
+                            android:fontFamily="sans-serif-medium" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="⬆️ Up"
+                            android:textColor="#2D3748"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Back Jumps -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center">
+
+                        <TextView
+                            android:id="@+id/tvJumpBack"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textColor="#9B59B6"
+                            android:textSize="28sp"
+                            android:textStyle="bold"
+                            android:fontFamily="sans-serif-medium" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="💃Dance"
+                            android:textColor="#2D3748"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Achievement Badge -->
+                <TextView
+                    android:id="@+id/tvAchievementBadge"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textColor="#FF6B35"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginTop="8dp"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Movement Selection -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:elevation="8dp"
+            app:cardBackgroundColor="#6A0572"
+            app:cardCornerRadius="20dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="🎯 Select Movement to Practice"
                     android:textColor="#FFFFFF"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:gravity="center"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="12dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:weightSum="4">
+
+                    <Button
+                        android:id="@+id/btnJumpLeftSelect"
+                        android:layout_width="0dp"
+                        android:layout_height="60dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="4dp"
+                        android:text="⬅️\nLeft"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="#FFFFFF"
+                        android:textAllCaps="false"
+                        android:background="@drawable/modern_button_primary"
+                        android:elevation="4dp" />
+
+                    <Button
+                        android:id="@+id/btnJumpRightSelect"
+                        android:layout_width="0dp"
+                        android:layout_height="60dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginEnd="4dp"
+                        android:text="➡️\nRight"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="#FFFFFF"
+                        android:textAllCaps="false"
+                        android:background="@drawable/modern_button_primary"
+                        android:elevation="4dp" />
+
+                    <Button
+                        android:id="@+id/btnJumpUpSelect"
+                        android:layout_width="0dp"
+                        android:layout_height="60dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginEnd="4dp"
+                        android:text="⬆️\nUp"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="#FFFFFF"
+                        android:textAllCaps="false"
+                        android:background="@drawable/modern_button_primary"
+                        android:elevation="4dp" />
+
+                    <Button
+                        android:id="@+id/btnJumpFrontSelect"
+                        android:layout_width="0dp"
+                        android:layout_height="60dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="4dp"
+                        android:text="💃\nDance"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="#FFFFFF"
+                        android:textAllCaps="false"
+                        android:background="@drawable/modern_button_primary"
+                        android:elevation="4dp" />
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- LED Controls -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:elevation="8dp"
+            app:cardBackgroundColor="#118AB2"
+            app:cardCornerRadius="20dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="💡 LED Controls"
+                    android:textColor="#FFFFFF"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="12dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:weightSum="3">
+
+                    <Button
+                        android:id="@+id/btnWhite"
+                        android:layout_width="0dp"
+                        android:layout_height="55dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="4dp"
+                        android:text="⚪"
+                        android:textSize="18sp"
+                        android:textColor="#2D3748"
+                        android:textAllCaps="false"
+                        android:background="@drawable/modern_button_secondary"
+                        android:elevation="4dp" />
+
+                    <Button
+                        android:id="@+id/btnRed"
+                        android:layout_width="0dp"
+                        android:layout_height="55dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginEnd="4dp"
+                        android:text="🔴"
+                        android:textSize="18sp"
+                        android:textColor="#2D3748"
+                        android:textAllCaps="false"
+                        android:background="@drawable/modern_button_secondary"
+                        android:elevation="4dp" />
+
+                    <Button
+                        android:id="@+id/btnBlue"
+                        android:layout_width="0dp"
+                        android:layout_height="55dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginEnd="4dp"
+                        android:text="🔵"
+                        android:textSize="18sp"
+                        android:textColor="#2D3748"
+                        android:textAllCaps="false"
+                        android:background="@drawable/modern_button_secondary"
+                        android:elevation="4dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:weightSum="3"
+                    android:layout_marginTop="8dp">
+
+                    <Button
+                        android:id="@+id/btnGreen"
+                        android:layout_width="0dp"
+                        android:layout_height="55dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="4dp"
+                        android:text="🟢"
+                        android:textSize="18sp"
+                        android:textColor="#2D3748"
+                        android:textAllCaps="false"
+                        android:background="@drawable/modern_button_secondary"
+                        android:elevation="4dp" />
+
+                    <Button
+                        android:id="@+id/btnTopaz"
+                        android:layout_width="0dp"
+                        android:layout_height="55dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginEnd="4dp"
+                        android:text="💎"
+                        android:textSize="18sp"
+                        android:textColor="#2D3748"
+                        android:textAllCaps="false"
+                        android:background="@drawable/modern_button_secondary"
+                        android:elevation="4dp" />
+
+                    <Button
+                        android:id="@+id/btnLilac"
+                        android:layout_width="0dp"
+                        android:layout_height="55dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginEnd="4dp"
+                        android:text="🟣"
+                        android:textSize="18sp"
+                        android:textColor="#2D3748"
+                        android:textAllCaps="false"
+                        android:background="@drawable/modern_button_secondary"
+                        android:elevation="4dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:weightSum="3"
+                    android:layout_marginTop="8dp">
+
+                    <Button
+                        android:id="@+id/btnRainbow"
+                        android:layout_width="0dp"
+                        android:layout_height="55dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="4dp"
+                        android:text="🌈"
+                        android:textSize="18sp"
+                        android:textColor="#2D3748"
+                        android:textAllCaps="false"
+                        android:background="@drawable/modern_button_secondary"
+                        android:elevation="4dp" />
+
+                    <Button
+                        android:id="@+id/btnSeizureMode"
+                        android:layout_width="0dp"
+                        android:layout_height="55dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginEnd="4dp"
+                        android:text="⚡"
+                        android:textSize="18sp"
+                        android:textColor="#2D3748"
+                        android:textAllCaps="false"
+                        android:background="@drawable/modern_button_secondary"
+                        android:elevation="4dp" />
+
+                    <Button
+                        android:id="@+id/btnLEDOff"
+                        android:layout_width="0dp"
+                        android:layout_height="55dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="4dp"
+                        android:text="🚫"
+                        android:textSize="18sp"
+                        android:textColor="#2D3748"
+                        android:textAllCaps="false"
+                        android:background="@drawable/modern_button_secondary"
+                        android:elevation="4dp" />
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- AI Testing Section -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:elevation="8dp"
+            app:cardBackgroundColor="#06D6A0"
+            app:cardCornerRadius="20dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="🤖 AI Movement Classifier"
+                    android:textColor="#2D3748"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="8dp" />
+
+                <Button
+                    android:id="@+id/btnTestAI"
+                    android:layout_width="match_parent"
+                    android:layout_height="55dp"
+                    android:text="🧪 Test AI Classifier"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:textAllCaps="false"
+                    android:background="@drawable/modern_button_primary"
+                    android:elevation="4dp"
                     android:layout_marginBottom="8dp" />
 
                 <TextView
                     android:id="@+id/tvAIStatus"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Loading AI..."
-                    android:textColor="#FFFFFF"
+                    android:text="AI Status: Ready"
+                    android:textColor="#2D3748"
                     android:textSize="14sp"
                     android:gravity="center"
-                    android:layout_marginBottom="12dp" />
-
-                <Button
-                    android:id="@+id/btnTestAI"
-                    android:layout_width="match_parent"
-                    android:layout_height="60dp"
-                    android:text="🧪 TEST AI"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="#FFFFFF"
-                    android:background="#FF6B35"
-                    android:elevation="6dp" />
-
+                    android:fontFamily="sans-serif-medium" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Hidden Compatibility Elements -->
-        <TextView
-            android:id="@+id/receive_text"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:visibility="gone" />
-
-        <TextView
-            android:id="@+id/tvCalibrationPrompt"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:visibility="gone" />
+        <!-- Serial Output Section REMOVED -->
 
     </LinearLayout>
 </ScrollView>

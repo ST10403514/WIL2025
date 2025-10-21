@@ -22,7 +22,6 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Handler;
 import android.os.Looper;
-import android.provider.MediaStore;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.style.ForegroundColorSpan;
@@ -44,29 +43,37 @@ import androidx.fragment.app.Fragment;
 import android.content.pm.PackageManager;
 
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 
 import java.util.ArrayDeque;
 import java.util.Arrays;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 public class TerminalFragment extends Fragment implements ServiceConnection, SerialListener {
 
     private enum Connected { False, Pending, True }
     private enum SensorMode { PHONE_GYRO, ESP32_ADXL345, AUTO_DETECT }
 
+    // Character types
+    private enum CharacterType { GIRL, LION, BOY }
+    private CharacterType selectedCharacter = CharacterType.BOY;
+
     private FirebaseAuth auth;
     private String deviceAddress;
     private SerialService service;
     private SensorMode currentSensorMode = SensorMode.AUTO_DETECT;
 
-    // Add AI classifier
+    // Character animation mappings
+    private Map<String, String> characterAnimations;
+    private Map<String, List<String>> characterAnimationsList; // All available animations per character
+
     private AIMovementClassifier aiClassifier;
     private Button btnTestAI;
     private TextView tvAIStatus;
+
+    private DataSyncManager dataSyncManager;
 
     private TextView receiveText;
     private Connected connected = Connected.False;
@@ -74,7 +81,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private boolean hexEnabled = false;
     private String newline = TextUtil.newline_crlf;
 
-    // Phone sensor variables
     private SensorManager sensorManager;
     private Sensor gyroSensor;
     private boolean gyroEnabled = false;
@@ -92,11 +98,9 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private String selectedMovement = null;
     private boolean isManualModeActive = false;
 
-    // Debounce mechanism to prevent multiple detections
     private long lastMovementTime = 0;
-    private static final long MOVEMENT_COOLDOWN = 1500; // 1.5 seconds between movements
+    private static final long MOVEMENT_COOLDOWN = 1500;
 
-    // Achievement system - NEW THRESHOLDS
     private static final int ACHIEVEMENT_10 = 10;
     private static final int ACHIEVEMENT_20 = 20;
     private static final int ACHIEVEMENT_50 = 50;
@@ -114,22 +118,21 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private TextView tvJumpLeft, tvJumpRight, tvJumpMiddle, tvJumpBack;
     private TextView tvLastMovement, tvAchievementBadge;
     private ImageView ivCharacterPlaceholder;
+    private TextView tvCharacterName;
 
-    // Auto-connect functionality
     private static final String PREFS_NAME = "BluetoothPrefs";
     private static final String PREF_DEVICE_ADDRESS = "saved_device_address";
     private static final int MAX_CONNECT_ATTEMPTS = 3;
     private int currentConnectAttempt = 0;
     private boolean isAutoConnecting = false;
 
-    // Auto-detection variables
     private boolean autoDetectionEnabled = true;
     private final Handler autoDetectionHandler = new Handler(Looper.getMainLooper());
     private final Runnable autoDetectionRunnable = new Runnable() {
         @Override
         public void run() {
             if (autoDetectionEnabled && currentSensorMode == SensorMode.AUTO_DETECT && connected == Connected.True) {
-                autoDetectionHandler.postDelayed(this, 5000); // Check every 5 seconds
+                autoDetectionHandler.postDelayed(this, 5000);
             }
         }
     };
@@ -142,6 +145,117 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         auth = FirebaseAuth.getInstance();
         Bundle args = getArguments();
         deviceAddress = args != null ? args.getString("device") : null;
+
+        if (args != null && args.containsKey("character")) {
+            String character = args.getString("character");
+            setCharacterFromString(character);
+        } else {
+            // Load from SharedPreferences if not passed via arguments
+            loadCharacterFromPreferences();
+        }
+
+        initializeCharacterAnimations();
+    }
+
+    private void setCharacterFromString(String character) {
+        if (character == null) {
+            selectedCharacter = CharacterType.BOY;
+            return;
+        }
+
+        switch (character.toLowerCase()) {
+            case "girl":
+                selectedCharacter = CharacterType.GIRL;
+                break;
+            case "lion":
+                selectedCharacter = CharacterType.LION;
+                break;
+            case "boy":
+            default:
+                selectedCharacter = CharacterType.BOY;
+                break;
+        }
+
+        Log.i("TerminalFragment", "🎭 Character selected: " + selectedCharacter);
+    }
+
+    private void loadCharacterFromPreferences() {
+        try {
+            SharedPreferences prefs = requireContext().getSharedPreferences("KineticPulsePrefs", Context.MODE_PRIVATE);
+            String savedCharacter = prefs.getString("selected_character", "boy");
+            setCharacterFromString(savedCharacter);
+            Log.i("TerminalFragment", "🎭 Loaded character from preferences: " + savedCharacter);
+        } catch (Exception e) {
+            Log.e("TerminalFragment", "Error loading character from preferences: " + e.getMessage());
+            selectedCharacter = CharacterType.BOY;
+        }
+    }
+
+    private void initializeCharacterAnimations() {
+        characterAnimations = new HashMap<>();
+        characterAnimationsList = new HashMap<>();
+
+        // GIRL animations
+        characterAnimations.put("GIRL_LEFT", "girl_skip_left");
+        characterAnimations.put("GIRL_RIGHT", "girl_skip_right");
+        characterAnimations.put("GIRL_UP", "girl_jump");
+        characterAnimations.put("GIRL_BACK", "girl_1foot");
+        characterAnimations.put("GIRL_SPECIAL", "girl_jump_clap");
+        characterAnimations.put("GIRL_DANCE", "girl_jump_clap");
+
+        List<String> girlAnimations = new ArrayList<>();
+        girlAnimations.add("girl_1foot");
+        girlAnimations.add("girl_jump");
+        girlAnimations.add("girl_skip_left");
+        girlAnimations.add("girl_skip_right");
+        girlAnimations.add("girl_jump_clap");
+        characterAnimationsList.put("GIRL", girlAnimations);
+
+
+        // LION animations
+        characterAnimations.put("LION_LEFT", "lion_jump_left");
+        characterAnimations.put("LION_RIGHT", "lion_skip_right");
+        characterAnimations.put("LION_UP", "lion_jump_up");
+        characterAnimations.put("LION_BACK", "lion_march");
+        characterAnimations.put("LION_SPECIAL", "lion_dance");
+        characterAnimations.put("LION_CLAP", "lion_clap");
+        characterAnimations.put("LION_DANCE", "lion_dance");
+
+        List<String> lionAnimations = new ArrayList<>();
+        lionAnimations.add("lion_jump_up");
+        lionAnimations.add("lion_clap");
+        lionAnimations.add("lion_hop_right");
+        lionAnimations.add("lion_march");
+        lionAnimations.add("lion_jump_left");
+        lionAnimations.add("lion_dance");
+        lionAnimations.add("lion_skip_right");
+        characterAnimationsList.put("LION", lionAnimations);
+
+        // BOY animations
+        characterAnimations.put("BOY_LEFT", "video_left");
+        characterAnimations.put("BOY_RIGHT", "video_right");
+        characterAnimations.put("BOY_UP", "video_jump");
+        characterAnimations.put("BOY_BACK", "video_jump");
+        characterAnimations.put("BOY_DANCE", "video_up");
+
+        List<String> boyAnimations = new ArrayList<>();
+        boyAnimations.add("video_left");
+        boyAnimations.add("video_right");
+        boyAnimations.add("video_jump");
+        characterAnimationsList.put("BOY", boyAnimations);
+    }
+
+    private String getCharacterAnimation(String movement) {
+        String key = selectedCharacter.name() + "_" + movement.toUpperCase();
+        String animation = characterAnimations.get(key);
+
+        if (animation == null) {
+            // Fallback to BOY animations if specific character animation not found
+            animation = characterAnimations.get("BOY_" + movement.toUpperCase());
+        }
+
+        Log.d("TerminalFragment", "🎬 Animation key: " + key + " -> " + animation);
+        return animation;
     }
 
     @Override
@@ -152,7 +266,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         reconnectHandler.removeCallbacksAndMessages(null);
         autoDetectionHandler.removeCallbacksAndMessages(null);
 
-        // ADD THIS: Clean up AI classifier
         if (aiClassifier != null) {
             aiClassifier.close();
         }
@@ -217,6 +330,8 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         if (currentSensorMode == SensorMode.AUTO_DETECT) {
             startAutoDetection();
         }
+        if (dataSyncManager != null) dataSyncManager.syncPendingData();
+        updateNetworkStatusUI();
     }
 
     @Override
@@ -254,10 +369,9 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_terminal, container, false);
 
-        // Initialize AI classifier
         aiClassifier = new AIMovementClassifier(getActivity());
+        dataSyncManager = new DataSyncManager(getActivity());
 
-        // Find AI test button and status (you'll need to add these to your XML)
         btnTestAI = view.findViewById(R.id.btnTestAI);
         tvAIStatus = view.findViewById(R.id.tvAIStatus);
 
@@ -265,10 +379,10 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             btnTestAI.setOnClickListener(v -> testAIClassifier());
         }
 
+        updateNetworkStatusUI();
         updateAIStatus();
 
-        // Initialize UI elements
-        receiveText = view.findViewById(R.id.receive_text);
+
         btnWhite = view.findViewById(R.id.btnWhite);
         btnRed = view.findViewById(R.id.btnRed);
         btnGreen = view.findViewById(R.id.btnGreen);
@@ -282,7 +396,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         btnMusicPlayer = view.findViewById(R.id.btnMusicPlayer);
         ivCharacterPlaceholder = view.findViewById(R.id.ivCharacterPlaceholder);
 
-
         vvMovementVideo = view.findViewById(R.id.vvMovementVideo);
         tvJumpLeft = view.findViewById(R.id.tvJumpLeft);
         tvJumpRight = view.findViewById(R.id.tvJumpRight);
@@ -290,8 +403,10 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         tvJumpBack = view.findViewById(R.id.tvJumpBack);
         tvLastMovement = view.findViewById(R.id.tvLastMovement);
         tvAchievementBadge = view.findViewById(R.id.tvAchievementBadge);
+        tvCharacterName = view.findViewById(R.id.tvCharacterName);
 
-        // LED Button Listeners - Only send if connected
+        setupCharacterDisplay();
+
         btnWhite.setOnClickListener(v -> sendIfConnected("w"));
         btnRed.setOnClickListener(v -> sendIfConnected("r"));
         btnBlue.setOnClickListener(v -> sendIfConnected("b"));
@@ -302,28 +417,70 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         btnSeizureMode.setOnClickListener(v -> sendIfConnected("m"));
         btnLEDOff.setOnClickListener(v -> sendIfConnected("o"));
 
-        // Mode Toggle Button
         btnModeToggle.setOnClickListener(v -> toggleSensorMode());
         updateModeToggleButton();
 
-        // Music Player Button
         btnMusicPlayer.setOnClickListener(v -> openMusicAppChooser());
 
-        // Movement Selection Buttons
         Button btnJumpLeftSelect = view.findViewById(R.id.btnJumpLeftSelect);
         Button btnJumpRightSelect = view.findViewById(R.id.btnJumpRightSelect);
         Button btnJumpUpSelect = view.findViewById(R.id.btnJumpUpSelect);
         Button btnJumpFrontSelect = view.findViewById(R.id.btnJumpFrontSelect);
 
-        btnJumpLeftSelect.setOnClickListener(v -> selectMovement("LEFT", "video_left"));
-        btnJumpRightSelect.setOnClickListener(v -> selectMovement("RIGHT", "video_right"));
-        btnJumpUpSelect.setOnClickListener(v -> selectMovement("UP", "video_up"));
-        btnJumpFrontSelect.setOnClickListener(v -> selectMovement("FORWARD", "video_up"));
+        btnJumpLeftSelect.setOnClickListener(v -> selectMovement("LEFT"));
+        btnJumpRightSelect.setOnClickListener(v -> selectMovement("RIGHT"));
+        btnJumpUpSelect.setOnClickListener(v -> selectMovement("UP"));
+        btnJumpFrontSelect.setOnClickListener(v -> selectMovement("DANCE"));
 
         return view;
     }
 
-    // ADD THIS METHOD: Test AI Classifier
+    private void setupCharacterDisplay() {
+        // Set character name
+        if (tvCharacterName != null) {
+            String charName = selectedCharacter.name();
+            tvCharacterName.setText("✨ " + charName + " ✨");
+        }
+
+        // Show idle animation for selected character
+        showIdleAnimation();
+    }
+
+    private void showIdleAnimation() {
+        String idleAnimation = getCharacterAnimation("LEFT");
+        if (idleAnimation != null) {
+            // Set placeholder image based on character
+            setCharacterPlaceholderImage();
+            Log.d("TerminalFragment", "🎭 Setting up character: " + selectedCharacter + " with idle: " + idleAnimation);
+        }
+    }
+
+    private void setCharacterPlaceholderImage() {
+        if (ivCharacterPlaceholder == null) return;
+
+        int placeholderResId;
+        switch (selectedCharacter) {
+            case GIRL:
+                placeholderResId = R.drawable.character_girl;
+                break;
+            case LION:
+                placeholderResId = R.drawable.character_lion;
+                break;
+            case BOY:
+            default:
+                placeholderResId = R.drawable.character_boy;
+                break;
+        }
+
+        try {
+            ivCharacterPlaceholder.setImageResource(placeholderResId);
+        } catch (Exception e) {
+            Log.e("TerminalFragment", "Error setting placeholder image: " + e.getMessage());
+            // Fallback to default placeholder
+            ivCharacterPlaceholder.setImageResource(R.drawable.character_placeholder);
+        }
+    }
+
     private void testAIClassifier() {
         Log.d("TerminalFragment", "🧪 Testing AI Classifier...");
 
@@ -337,19 +494,18 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             return;
         }
 
-        // Test with some sample sensor data that should trigger different activities
         String[] testMovements = {
-                "Test 1 - Walking (low values)",
-                "Test 2 - Running (medium values)",
-                "Test 3 - Boxing (high X values)",
-                "Test 4 - Clapping (random values)"
+                "Test 1 - Walking",
+                "Test 2 - Running",
+                "Test 3 - Boxing",
+                "Test 4 - Clapping"
         };
 
         float[][] testData = {
-                {0.5f, 0.3f, 0.2f},  // Walking
-                {1.5f, 1.2f, 0.8f},  // Running
-                {3.0f, 0.5f, 0.3f},  // Boxing (high X)
-                {0.8f, 0.8f, 0.8f}   // Clapping
+                {0.5f, 0.3f, 0.2f},
+                {1.5f, 1.2f, 0.8f},
+                {3.0f, 0.5f, 0.3f},
+                {0.8f, 0.8f, 0.8f}
         };
 
         StringBuilder results = new StringBuilder("🧪 AI Test Results:\n");
@@ -358,7 +514,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             String result = aiClassifier.processSensorData(testData[i][0], testData[i][1], testData[i][2]);
             results.append(testMovements[i]).append(": ").append(result).append("\n");
 
-            // Add some delay between tests to see progress
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
@@ -367,27 +522,20 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         }
 
         showAITestResult(results.toString());
-        Log.d("TerminalFragment", results.toString());
     }
 
-    // ADD THIS METHOD: Show AI Test Results
     private void showAITestResult(String message) {
         Activity activity = getActivity();
         if (activity != null) {
             activity.runOnUiThread(() -> {
                 Toast.makeText(activity, message, Toast.LENGTH_LONG).show();
-
-                // Also update status text if available
                 if (tvAIStatus != null) {
                     tvAIStatus.setText(message);
                 }
-
-                Log.d("TerminalFragment", "AI Test: " + message);
             });
         }
     }
 
-    // ADD THIS METHOD: Update AI Status Display
     private void updateAIStatus() {
         if (aiClassifier != null) {
             String status = aiClassifier.isModelLoaded() ?
@@ -396,35 +544,13 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             if (tvAIStatus != null) {
                 tvAIStatus.setText(status);
             }
-
-            Log.d("TerminalFragment", "AI Status: " + status);
-
-            // Add detailed logging
-            if (!aiClassifier.isModelLoaded()) {
-                Log.e("TerminalFragment", "❌ AI MODEL FAILED TO LOAD - Check:");
-                Log.e("TerminalFragment", "   - Model file in assets folder");
-                Log.e("TerminalFragment", "   - TensorFlow Lite dependencies");
-                Log.e("TerminalFragment", "   - SELECT_TF_OPS in build.gradle");
-            }
-        } else {
-            Log.e("TerminalFragment", "❌ AI Classifier is NULL");
         }
     }
-    // ADD THIS METHOD: AI Processing
+
     private void processWithAI(float ax, float ay, float az) {
         if (aiClassifier != null && aiClassifier.isModelLoaded()) {
-            Log.d("TerminalFragment", "📊 Processing sensor data with AI - X: " +
-                    String.format("%.2f", ax) + " Y: " + String.format("%.2f", ay) + " Z: " + String.format("%.2f", az));
-
             String detectedActivity = aiClassifier.processSensorData(ax, ay, az);
 
-            // Log the AI result for debugging
-            if (!detectedActivity.equals("collecting_data") &&
-                    !detectedActivity.equals("ai_not_loaded")) {
-                Log.d("TerminalFragment", "🎯 AI Detection: " + detectedActivity);
-            }
-
-            // Only handle confident detections
             if (!detectedActivity.equals("collecting_data") &&
                     !detectedActivity.equals("uncertain") &&
                     !detectedActivity.equals("error") &&
@@ -435,11 +561,9 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         }
     }
 
-    // ADD THIS METHOD: AI Detection Handler
     private void handleAIDetection(String activity) {
         Log.i("TerminalFragment", "🎯 AI Detected: " + activity);
 
-        // Map AI activities to your existing movement handlers
         switch (activity.toLowerCase()) {
             case "walking":
             case "running":
@@ -448,16 +572,20 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
                 }
                 break;
             case "boxing":
-                // Boxing could trigger left/right movements
                 if (isManualModeActive) {
                     if ("LEFT".equals(selectedMovement)) handleLeftMovement();
                     else if ("RIGHT".equals(selectedMovement)) handleRightMovement();
                 }
                 break;
             case "clapping":
-                // Special event for clapping
-                sendIfConnected("a"); // Rainbow mode for celebration
-                Toast.makeText(getContext(), "👏 Clapping detected!", Toast.LENGTH_SHORT).show();
+            case "dancing": // Add this case for dance detection
+                if (isManualModeActive && "DANCE".equals(selectedMovement)) {
+                    handleDanceMovement();
+                } else {
+                    playSpecialAnimation();
+                    sendIfConnected("a");
+                    Toast.makeText(getContext(), "💃 Dance detected!", Toast.LENGTH_SHORT).show();
+                }
                 break;
             case "standing up":
                 if (isManualModeActive && "UP".equals(selectedMovement)) {
@@ -471,16 +599,30 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
                 break;
         }
 
-        // Update UI with AI detection
         updateLastMovementText("🤖 AI: " + activity.toUpperCase(), "#FF6B6B");
     }
 
-    private void selectMovement(String movement, String videoFile) {
+    private void playSpecialAnimation() {
+        String specialAnim = getCharacterAnimation("SPECIAL");
+        if (specialAnim == null && selectedCharacter == CharacterType.LION) {
+            specialAnim = getCharacterAnimation("CLAP");
+        }
+        if (specialAnim != null) {
+            showMovementVideo(specialAnim);
+        }
+    }
+
+    private void selectMovement(String movement) {
         selectedMovement = movement;
         isManualModeActive = true;
-        showMovementVideo(videoFile);
+
+        String animationFile = getCharacterAnimation(movement);
+        if (animationFile != null) {
+            showMovementVideo(animationFile);
+        }
+
         Toast.makeText(getContext(), "Now perform your " + movement + " movement!", Toast.LENGTH_SHORT).show();
-        Log.i("TerminalFragment", "🎯 Manual mode activated for: " + movement);
+        Log.i("TerminalFragment", "🎯 Manual mode: " + movement + " with " + selectedCharacter);
     }
 
     private void toggleSensorMode() {
@@ -537,7 +679,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             intent.addCategory(Intent.CATEGORY_APP_MUSIC);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(Intent.createChooser(intent, "Choose Music App 🎵"));
-            Log.i("TerminalFragment", "🎵 Opening music app chooser");
         } catch (Exception e) {
             try {
                 Intent intent = new Intent(Intent.ACTION_VIEW);
@@ -553,21 +694,17 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         autoDetectionEnabled = true;
         autoDetectionHandler.removeCallbacks(autoDetectionRunnable);
         autoDetectionHandler.postDelayed(autoDetectionRunnable, 2000);
-        Log.i("TerminalFragment", "🎯 Auto-detection started");
     }
 
     private void stopAutoDetection() {
         autoDetectionEnabled = false;
         autoDetectionHandler.removeCallbacks(autoDetectionRunnable);
-        Log.i("TerminalFragment", "🎯 Auto-detection stopped");
     }
 
-    // Helper method to send only if connected
     private void sendIfConnected(String str) {
         if (connected == Connected.True && service != null) {
             send(str);
         }
-        // Don't show toast if not connected - user is just changing LED colors
     }
 
     @Override
@@ -666,7 +803,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
 
     private void send(String str) {
         if(connected != Connected.True || service == null) {
-            return; // Silently fail if not connected
+            return;
         }
         try {
             byte[] data = (str + newline).getBytes();
@@ -679,7 +816,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private void receive(ArrayDeque<byte[]> datas) {
         for (byte[] data : datas) {
             String msg = new String(data);
-            Log.d("TerminalFragment", "📥 ESP32 DATA: '" + msg + "'");
 
             if (currentSensorMode == SensorMode.ESP32_ADXL345 || currentSensorMode == SensorMode.AUTO_DETECT) {
                 processESP32MovementData(msg);
@@ -711,11 +847,42 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             float accelY = Float.parseFloat(parts[1].trim());
             float accelZ = Float.parseFloat(parts[2].trim());
 
-            // ✅ ADD THIS: Process with AI
             processWithAI(accelX, accelY, accelZ);
-
             processAccelerometerMovement(accelX, accelY, accelZ);
         }
+    }
+    private void handleDanceMovement() {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastMovementTime < MOVEMENT_COOLDOWN) {
+            return;
+        }
+
+        if (!isManualModeActive && currentSensorMode != SensorMode.AUTO_DETECT) return;
+
+        if (selectedMovement != null && !selectedMovement.equals("DANCE")) {
+            return;
+        }
+
+        lastMovementTime = currentTime;
+        // You might want to track dance movements separately or increment a counter
+        // For now, let's increment jumpBack to keep the score consistent
+        jumpBack++;
+        updateJumpLabels();
+        updateLastMovementText("💃 DANCE TIME!", "#FF6B35");
+        saveJumpDataToAPI();
+        sendIfConnected("a"); // Rainbow effect for dance!
+
+        String animation = getCharacterAnimation("DANCE");
+        if (animation != null) {
+            showMovementVideo(animation);
+        } else {
+            Log.w("TerminalFragment", "No DANCE animation found for " + selectedCharacter);
+            // Fallback to special animation
+            playSpecialAnimation();
+        }
+
+        checkMovementCompletion("DANCE");
+        checkAchievements();
     }
 
     private void parseMovementCommand(String moveMessage) {
@@ -729,6 +896,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             case "UP": handleForwardMovement(); break;
             case "BACK":
             case "BACKWARD": handleBackMovement(); break;
+            case "DANCE": handleDanceMovement(); break;
         }
     }
 
@@ -742,7 +910,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private void processAccelerometerMovement(float accelX, float accelY, float accelZ) {
         final float ACCEL_THRESHOLD = 2.0f;
 
-        // Your existing logic
         if (Math.abs(accelX) > ACCEL_THRESHOLD) {
             if (accelX > ACCEL_THRESHOLD) handleRightMovement();
             else handleLeftMovement();
@@ -751,24 +918,19 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             else handleBackMovement();
         }
 
-        // NEW: Also send to AI classifier - ADD THIS LINE
         processWithAI(accelX, accelY, accelZ);
     }
 
-    // FIXED: Only increment score for SELECTED movement
     private void handleLeftMovement() {
-        // Check cooldown
         long currentTime = System.currentTimeMillis();
         if (currentTime - lastMovementTime < MOVEMENT_COOLDOWN) {
-            return; // Too soon, ignore
+            return;
         }
 
-        // Only process if manual mode is active OR auto-detect mode
         if (!isManualModeActive && currentSensorMode != SensorMode.AUTO_DETECT) return;
 
-        // Check if this is the selected movement
         if (selectedMovement != null && !selectedMovement.equals("LEFT")) {
-            return; // Wrong movement, ignore
+            return;
         }
 
         lastMovementTime = currentTime;
@@ -777,7 +939,14 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         updateLastMovementText("⬅️ LEFT MOVEMENT", "#667eea");
         saveJumpDataToAPI();
         sendIfConnected("b");
-        showMovementVideo("video_left");
+
+        String animation = getCharacterAnimation("LEFT");
+        if (animation != null) {
+            showMovementVideo(animation);
+        } else {
+            Log.w("TerminalFragment", "No LEFT animation found for " + selectedCharacter);
+        }
+
         checkMovementCompletion("LEFT");
         checkAchievements();
     }
@@ -798,7 +967,14 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         updateLastMovementText("➡️ RIGHT MOVEMENT", "#667eea");
         saveJumpDataToAPI();
         sendIfConnected("g");
-        showMovementVideo("video_right");
+
+        String animation = getCharacterAnimation("RIGHT");
+        if (animation != null) {
+            showMovementVideo(animation);
+        } else {
+            Log.w("TerminalFragment", "No RIGHT animation found for " + selectedCharacter);
+        }
+
         checkMovementCompletion("RIGHT");
         checkAchievements();
     }
@@ -819,7 +995,14 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         updateLastMovementText("⬆️ FORWARD MOVEMENT", "#667eea");
         saveJumpDataToAPI();
         sendIfConnected("w");
-        showMovementVideo("video_up");
+
+        String animation = getCharacterAnimation("UP");
+        if (animation != null) {
+            showMovementVideo(animation);
+        } else {
+            Log.w("TerminalFragment", "No UP animation found for " + selectedCharacter);
+        }
+
         checkMovementCompletion("UP");
         checkMovementCompletion("FORWARD");
         checkAchievements();
@@ -841,7 +1024,14 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         updateLastMovementText("⬇️ BACK MOVEMENT", "#667eea");
         saveJumpDataToAPI();
         sendIfConnected("r");
-        showMovementVideo("video_up");
+
+        String animation = getCharacterAnimation("BACK");
+        if (animation != null) {
+            showMovementVideo(animation);
+        } else {
+            Log.w("TerminalFragment", "No BACK animation found for " + selectedCharacter);
+        }
+
         checkMovementCompletion("BACK");
         checkAchievements();
     }
@@ -854,7 +1044,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         }
     }
 
-    // FIXED: New achievement thresholds at 10, 20, 50, 100
     private void checkAchievements() {
         int totalMovements = jumpLeft + jumpRight + jumpUp + jumpBack;
 
@@ -889,7 +1078,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
                     .show();
 
             Toast.makeText(a, title, Toast.LENGTH_LONG).show();
-            Log.i("TerminalFragment", "🏆 Achievement unlocked: " + title);
         }
     }
 
@@ -905,35 +1093,30 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
                 Uri videoUri = Uri.parse("android.resource://" + getContext().getPackageName() + "/" + resId);
                 vvMovementVideo.setVideoURI(videoUri);
 
-                vvMovementVideo.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                    @Override
-                    public void onPrepared(MediaPlayer mp) {
-                        mp.setLooping(false);
-                        vvMovementVideo.start();
+                vvMovementVideo.setOnPreparedListener(mp -> {
+                    mp.setLooping(false);
+                    vvMovementVideo.start();
+                });
+
+                vvMovementVideo.setOnCompletionListener(mp -> {
+                    vvMovementVideo.setVisibility(View.GONE);
+                    if (ivCharacterPlaceholder != null) {
+                        ivCharacterPlaceholder.setVisibility(View.VISIBLE);
                     }
                 });
 
-                vvMovementVideo.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                    @Override
-                    public void onCompletion(MediaPlayer mp) {
-                        vvMovementVideo.setVisibility(View.GONE);
-                        if (ivCharacterPlaceholder != null) {
-                            ivCharacterPlaceholder.setVisibility(View.VISIBLE);
-                        }
+                vvMovementVideo.setOnErrorListener((mp, what, extra) -> {
+                    Log.e("TerminalFragment", "Video error: " + what + ", " + extra);
+                    vvMovementVideo.setVisibility(View.GONE);
+                    if (ivCharacterPlaceholder != null) {
+                        ivCharacterPlaceholder.setVisibility(View.VISIBLE);
                     }
+                    return true;
                 });
-
-                vvMovementVideo.setOnErrorListener(new MediaPlayer.OnErrorListener() {
-                    @Override
-                    public boolean onError(MediaPlayer mp, int what, int extra) {
-                        Log.e("TerminalFragment", "Video error: " + what + ", " + extra);
-                        vvMovementVideo.setVisibility(View.GONE);
-                        if (ivCharacterPlaceholder != null) {
-                            ivCharacterPlaceholder.setVisibility(View.VISIBLE);
-                        }
-                        return true;
-                    }
-                });
+            } else {
+                Log.e("TerminalFragment", "Video file not found: " + videoFileName);
+                // Show a toast message for missing video
+                Toast.makeText(getContext(), "Animation not available: " + videoFileName, Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -964,9 +1147,8 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
                 float x = event.values[0];
                 float y = event.values[1];
-                float z = event.values[2]; // Get Z axis too
+                float z = event.values[2];
 
-                // ✅ ADD THIS: Process with AI
                 processWithAI(x, y, z);
 
                 float threshold = 2.0f;
@@ -1102,24 +1284,29 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     }
 
     private void saveJumpDataToAPI() {
-        if (auth == null) auth = FirebaseAuth.getInstance();
-        FirebaseUser currentUser = auth != null ? auth.getCurrentUser() : null;
-        if (currentUser != null) {
-            JumpDataRequest jumpDataRequest = new JumpDataRequest(
-                    jumpLeft, jumpRight, jumpUp, currentUser.getUid()
-            );
-            RetrofitInstance.getApi().saveJumpData(jumpDataRequest).enqueue(new Callback<ApiResponse>() {
-                @Override
-                public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
-                    if (response.isSuccessful()) {
-                        Log.d("JumpDataAPI", "Score saved: " + response.body().getMessage());
+        if (dataSyncManager != null) {
+            dataSyncManager.saveMovementData(jumpLeft, jumpRight, jumpUp, jumpBack);
+
+            if (!dataSyncManager.isOnline()) {
+                Toast.makeText(getContext(), "📱 Saved offline - will sync when online", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void updateNetworkStatusUI() {
+        if (dataSyncManager != null && tvLastMovement != null) {
+            Activity activity = getActivity();
+            if (activity != null) {
+                activity.runOnUiThread(() -> {
+                    if (dataSyncManager.isOnline()) {
+                        tvLastMovement.setText("🟢 ONLINE - Real-time sync");
+                        tvLastMovement.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
+                    } else {
+                        tvLastMovement.setText("🔴 OFFLINE - Saving locally");
+                        tvLastMovement.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
                     }
-                }
-                @Override
-                public void onFailure(Call<ApiResponse> call, Throwable t) {
-                    Log.e("JumpDataAPI", "Error: " + t.getMessage());
-                }
-            });
+                });
+            }
         }
     }
 }
