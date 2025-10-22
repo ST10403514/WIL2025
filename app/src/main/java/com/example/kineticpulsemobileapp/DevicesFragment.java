@@ -2,15 +2,20 @@ package com.example.kineticpulsemobileapp;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
@@ -19,22 +24,25 @@ import android.widget.TextView;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.ListFragment;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 
-public class DevicesFragment extends ListFragment {
+public class DevicesFragment extends Fragment {
 
     private BluetoothAdapter bluetoothAdapter;
     private final ArrayList<BluetoothDevice> listItems = new ArrayList<>();
     private ArrayAdapter<BluetoothDevice> listAdapter;
     private ActivityResultLauncher<String> requestBluetoothPermissionLauncher;
+    private ActivityResultLauncher<Intent> enableBluetoothLauncher;
     private Button btnBluetoothSettings;
     private Button btnRefreshDevices;
+    private ListView devicesListView;
+    private TextView emptyTextView;
     private boolean permissionMissing;
     private static final String TAG = "DevicesFragment";
 
@@ -71,45 +79,169 @@ public class DevicesFragment extends ListFragment {
                         refresh();
                     } else {
                         Log.d(TAG, "Bluetooth permission denied");
-                        refresh(); // Still refresh to update UI state
+                        showPermissionDeniedMessage();
+                    }
+                });
+
+        // Bluetooth enable launcher
+        enableBluetoothLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (isBluetoothEnabled()) {
+                        Log.d(TAG, "Bluetooth enabled by user");
+                        checkAndRequestPermissions();
+                    } else {
+                        Log.d(TAG, "User did not enable Bluetooth");
+                        setEmptyText("❌ Bluetooth is required\n\nTap 'Bluetooth Settings' to enable");
                     }
                 });
     }
 
+    @Nullable
     @Override
-    public void onActivityCreated(Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-        setListAdapter(null);
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_devices, container, false);
+    }
 
-        // ALWAYS INFLATE AND SHOW HEADER FIRST
-        View header = getActivity().getLayoutInflater().inflate(R.layout.device_list_header, null, false);
-        getListView().addHeaderView(header, null, false);
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
 
-        // Set background color for the list
-        getListView().setBackgroundColor(0xFFFFE5B4);
-        getListView().setDivider(null);
-        getListView().setDividerHeight(0);
+        // Initialize views
+        btnBluetoothSettings = view.findViewById(R.id.btnBluetoothSettings);
+        btnRefreshDevices = view.findViewById(R.id.btnRefreshDevices);
+        devicesListView = view.findViewById(R.id.devicesListView); // This should work now
 
-        // Initialize buttons from header
-        btnBluetoothSettings = header.findViewById(R.id.btnBluetoothSettings);
-        btnRefreshDevices = header.findViewById(R.id.btnRefreshDevices);
+        // Set up list view
+        devicesListView.setAdapter(listAdapter);
+        devicesListView.setOnItemClickListener(this::onListItemClick);
 
-        // Setup button click listeners - THESE HANDLE ALL ACTIONS
+        // Set button listeners
         btnBluetoothSettings.setOnClickListener(v -> handleBluetoothSettings());
         btnRefreshDevices.setOnClickListener(v -> handleRefreshDevices());
 
-        setEmptyText("Checking Bluetooth status...");
-        ((TextView) getListView().getEmptyView()).setTextSize(18);
-        ((TextView) getListView().getEmptyView()).setTextColor(0xFF2D3748);
+        // Create empty text view
+        emptyTextView = new TextView(getContext());
+        emptyTextView.setTextSize(18);
+        emptyTextView.setTextColor(0xFF2D3748);
+        emptyTextView.setPadding(50, 50, 50, 50);
+        emptyTextView.setGravity(android.view.Gravity.CENTER);
 
-        setListAdapter(listAdapter);
+        // Add the empty view to the parent layout
+        ViewGroup parent = (ViewGroup) devicesListView.getParent();
+        parent.addView(emptyTextView);
+        devicesListView.setEmptyView(emptyTextView);
+
+        setEmptyText("Initializing Bluetooth...");
+
+        // Check Bluetooth state immediately
+        checkBluetoothState();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        // Just refresh the state, don't auto-request permissions
+        checkBluetoothState();
+    }
+
+    private void setEmptyText(String text) {
+        if (emptyTextView != null) {
+            emptyTextView.setText(text);
+        }
+    }
+
+    /**
+     * Check Bluetooth state and guide user through setup if needed
+     */
+    private void checkBluetoothState() {
+        if (bluetoothAdapter == null) {
+            setEmptyText("❌ Bluetooth not supported on this device");
+            return;
+        }
+
+        if (!bluetoothAdapter.isEnabled()) {
+            showBluetoothEnableDialog();
+            return;
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (getActivity().checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                showPermissionDialog();
+                return;
+            }
+        }
+
+        // Everything is ready, refresh devices
         refresh();
+    }
+
+    private void showBluetoothEnableDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle("Enable Bluetooth");
+        builder.setMessage("Bluetooth is required to connect to your ESP32 device. Would you like to enable it now?");
+        builder.setNegativeButton("Not Now", (dialog, which) -> {
+            setEmptyText("❌ Bluetooth is disabled\n\nTap 'Bluetooth Settings' to enable");
+        });
+        builder.setPositiveButton("Enable", (dialog, which) -> {
+            enableBluetooth();
+        });
+        builder.setCancelable(false);
+        builder.show();
+    }
+
+    private void showPermissionDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle("Bluetooth Permission Needed");
+        builder.setMessage("This app needs Bluetooth permission to discover and connect to nearby devices.");
+        builder.setNegativeButton("Not Now", (dialog, which) -> {
+            setEmptyText("🔐 Permission required\n\nTap 'Refresh List' to grant permission");
+        });
+        builder.setPositiveButton("Grant Permission", (dialog, which) -> {
+            requestBluetoothPermission();
+        });
+        builder.setCancelable(false);
+        builder.show();
+    }
+
+    private void showPermissionDeniedMessage() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle("Permission Denied");
+        builder.setMessage("Bluetooth permission is required to scan for devices. You can grant permission in Settings.");
+        builder.setNegativeButton("Cancel", null);
+        builder.setPositiveButton("Settings", (dialog, which) -> {
+            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+            Uri uri = Uri.fromParts("package", getActivity().getPackageName(), null);
+            intent.setData(uri);
+            startActivity(intent);
+        });
+        builder.show();
+    }
+
+    private void enableBluetooth() {
+        Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+        enableBluetoothLauncher.launch(enableBtIntent);
+    }
+
+    private void requestBluetoothPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            requestBluetoothPermissionLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT);
+        }
+    }
+
+    private void checkAndRequestPermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (getActivity().checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                requestBluetoothPermission();
+            } else {
+                refresh();
+            }
+        } else {
+            refresh();
+        }
+    }
+
+    private boolean isBluetoothEnabled() {
+        return bluetoothAdapter != null && bluetoothAdapter.isEnabled();
     }
 
     /**
@@ -124,18 +256,17 @@ public class DevicesFragment extends ListFragment {
         }
 
         if (!bluetoothAdapter.isEnabled()) {
-            // Open Bluetooth settings to enable Bluetooth
-            Intent enableBtIntent = new Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS);
-            startActivity(enableBtIntent);
+            // Use the system dialog to enable Bluetooth
+            enableBluetooth();
         } else {
-            // Bluetooth is already enabled, just open settings for pairing
+            // Open Bluetooth settings for pairing
             Intent intent = new Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS);
             startActivity(intent);
         }
     }
 
     /**
-     * Handle Refresh Devices button click - this handles permissions too
+     * Handle Refresh Devices button click
      */
     private void handleRefreshDevices() {
         Log.d(TAG, "Refresh Devices button clicked");
@@ -146,16 +277,14 @@ public class DevicesFragment extends ListFragment {
         }
 
         if (!bluetoothAdapter.isEnabled()) {
-            setEmptyText("⚠️ Please enable Bluetooth first\nTap 'Bluetooth Settings'");
+            showBluetoothEnableDialog();
             return;
         }
 
         // Check if we need permissions
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (getActivity().checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-                Log.d(TAG, "Requesting Bluetooth permission...");
-                setEmptyText("📱 Requesting Bluetooth permission...");
-                requestBluetoothPermissionLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT);
+                showPermissionDialog();
                 return;
             }
         }
@@ -186,18 +315,17 @@ public class DevicesFragment extends ListFragment {
             if(!permissionMissing && bluetoothAdapter.isEnabled()) {
                 // We have permissions and Bluetooth is enabled - load devices
                 for (BluetoothDevice device : bluetoothAdapter.getBondedDevices()) {
-                    // Include all device types for now
                     listItems.add(device);
                 }
                 Collections.sort(listItems, BluetoothUtil::compareTo);
             }
         }
 
-        // Update empty text based on state - CLEAR INSTRUCTIONS
+        // Update empty text based on state
         if(bluetoothAdapter == null) {
             setEmptyText("❌ Bluetooth not supported on this device");
         } else if(!bluetoothAdapter.isEnabled()) {
-            setEmptyText("🔵 Bluetooth is disabled\n\nTap \"Bluetooth Settings\" to enable Bluetooth");
+            setEmptyText("🔵 Bluetooth is disabled\n\nTap \"Bluetooth Settings\" to enable");
         } else if(permissionMissing) {
             setEmptyText("🔐 Bluetooth permission required\n\nTap \"Refresh List\" to grant permission");
         } else if(listItems.isEmpty()) {
@@ -211,9 +339,6 @@ public class DevicesFragment extends ListFragment {
         listAdapter.notifyDataSetChanged();
     }
 
-    /**
-     * Check if the app is running on an emulator
-     */
     private boolean isRunningOnEmulator() {
         return Build.FINGERPRINT.contains("generic")
                 || Build.FINGERPRINT.contains("emulator")
@@ -222,29 +347,21 @@ public class DevicesFragment extends ListFragment {
                 || Build.MODEL.contains("Android SDK");
     }
 
-    /**
-     * Add mock Bluetooth devices for emulator testing
-     */
     private void addMockDevices() {
         try {
             Log.d(TAG, "Creating mock Bluetooth devices");
-
-            // Create mock Bluetooth devices using reflection
             Class<?> bluetoothDeviceClass = Class.forName("android.bluetooth.BluetoothDevice");
             Constructor<?> constructor = bluetoothDeviceClass.getDeclaredConstructor(String.class);
             constructor.setAccessible(true);
 
-            // Add mock ESP32 device
             BluetoothDevice mockESP32 = (BluetoothDevice) constructor.newInstance("00:11:22:33:44:55");
             setMockDeviceName(mockESP32, "ESP32_Gyro_Sensor");
             listItems.add(mockESP32);
 
-            // Add mock Arduino device
             BluetoothDevice mockArduino = (BluetoothDevice) constructor.newInstance("66:77:88:99:AA:BB");
             setMockDeviceName(mockArduino, "Arduino_Nano_BLE");
             listItems.add(mockArduino);
 
-            // Add another mock device
             BluetoothDevice mockSensor = (BluetoothDevice) constructor.newInstance("12:34:56:78:90:AB");
             setMockDeviceName(mockSensor, "Kinetic_Pulse_Meter");
             listItems.add(mockSensor);
@@ -257,27 +374,19 @@ public class DevicesFragment extends ListFragment {
         }
     }
 
-    /**
-     * Fallback method to create mock devices without reflection
-     */
     private void createSimpleMockDevices() {
         try {
             BluetoothDevice mock1 = BluetoothAdapter.getDefaultAdapter().getRemoteDevice("00:11:22:33:44:55");
             BluetoothDevice mock2 = BluetoothAdapter.getDefaultAdapter().getRemoteDevice("66:77:88:99:AA:BB");
             BluetoothDevice mock3 = BluetoothAdapter.getDefaultAdapter().getRemoteDevice("12:34:56:78:90:AB");
-
             listItems.add(mock1);
             listItems.add(mock2);
             listItems.add(mock3);
-
         } catch (Exception e) {
             Log.e(TAG, "Fallback mock device creation failed: " + e.getMessage());
         }
     }
 
-    /**
-     * Set the name of a mock Bluetooth device using reflection
-     */
     private void setMockDeviceName(BluetoothDevice device, String name) {
         try {
             Field nameField = BluetoothDevice.class.getDeclaredField("mName");
@@ -288,15 +397,15 @@ public class DevicesFragment extends ListFragment {
         }
     }
 
-    @Override
-    public void onListItemClick(@NonNull ListView l, @NonNull View v, int position, long id) {
-        if (position > 0 && position - 1 < listItems.size()) {
-            BluetoothDevice device = listItems.get(position - 1);
-
+    /**
+     * Handle list item click
+     */
+    private void onListItemClick(AdapterView<?> parent, View view, int position, long id) {
+        if (position < listItems.size()) {
+            BluetoothDevice device = listItems.get(position);
             Bundle args = new Bundle();
             args.putString("device", device.getAddress());
             args.putBoolean("isEmulator", isRunningOnEmulator());
-
             Fragment fragment = new TerminalFragment();
             fragment.setArguments(args);
             getParentFragmentManager().beginTransaction()

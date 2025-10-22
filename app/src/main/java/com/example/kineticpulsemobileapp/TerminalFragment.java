@@ -234,14 +234,15 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         // BOY animations
         characterAnimations.put("BOY_LEFT", "video_left");
         characterAnimations.put("BOY_RIGHT", "video_right");
-        characterAnimations.put("BOY_UP", "video_jump");
+        characterAnimations.put("BOY_UP", "video_up");
         characterAnimations.put("BOY_BACK", "video_jump");
-        characterAnimations.put("BOY_DANCE", "video_up");
+        characterAnimations.put("BOY_DANCE", "video_dance");
 
         List<String> boyAnimations = new ArrayList<>();
         boyAnimations.add("video_left");
         boyAnimations.add("video_right");
-        boyAnimations.add("video_jump");
+        boyAnimations.add("video_up");
+        boyAnimations.add("video_dance");
         characterAnimationsList.put("BOY", boyAnimations);
     }
 
