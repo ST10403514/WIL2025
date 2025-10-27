@@ -97,6 +97,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private int jumpBack = 0;
     private String selectedMovement = null;
     private boolean isManualModeActive = false;
+    private boolean isCollectingSamples = false; // New flag to track collection state
 
     private long lastMovementTime = 0;
     private static final long MOVEMENT_COOLDOWN = 1500;
@@ -150,7 +151,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             String character = args.getString("character");
             setCharacterFromString(character);
         } else {
-            // Load from SharedPreferences if not passed via arguments
             loadCharacterFromPreferences();
         }
 
@@ -211,7 +211,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         girlAnimations.add("girl_jump_clap");
         characterAnimationsList.put("GIRL", girlAnimations);
 
-
         // LION animations
         characterAnimations.put("LION_LEFT", "lion_jump_left");
         characterAnimations.put("LION_RIGHT", "lion_skip_right");
@@ -251,7 +250,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         String animation = characterAnimations.get(key);
 
         if (animation == null) {
-            // Fallback to BOY animations if specific character animation not found
             animation = characterAnimations.get("BOY_" + movement.toUpperCase());
         }
 
@@ -373,16 +371,11 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         aiClassifier = new AIMovementClassifier(getActivity());
         dataSyncManager = new DataSyncManager(getActivity());
 
-        btnTestAI = view.findViewById(R.id.btnTestAI);
+        btnTestAI = view.findViewById(R.id.btnTestAI); // Kept for manual testing option
         tvAIStatus = view.findViewById(R.id.tvAIStatus);
-
-        if (btnTestAI != null) {
-            btnTestAI.setOnClickListener(v -> testAIClassifier());
-        }
 
         updateNetworkStatusUI();
         updateAIStatus();
-
 
         btnWhite = view.findViewById(R.id.btnWhite);
         btnRed = view.findViewById(R.id.btnRed);
@@ -433,24 +426,32 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         btnJumpUpSelect.setOnClickListener(v -> selectMovement("UP"));
         btnJumpFrontSelect.setOnClickListener(v -> selectMovement("DANCE"));
 
+        // Optional manual test button
+        if (btnTestAI != null) {
+            btnTestAI.setOnClickListener(v -> {
+                if (selectedMovement != null && !isCollectingSamples) {
+                    testAIClassifier(selectedMovement);
+                } else {
+                    Toast.makeText(getContext(), "Please select a movement first!", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
         return view;
     }
 
     private void setupCharacterDisplay() {
-        // Set character name
         if (tvCharacterName != null) {
             String charName = selectedCharacter.name();
             tvCharacterName.setText("✨ " + charName + " ✨");
         }
 
-        // Show idle animation for selected character
         showIdleAnimation();
     }
 
     private void showIdleAnimation() {
         String idleAnimation = getCharacterAnimation("LEFT");
         if (idleAnimation != null) {
-            // Set placeholder image based on character
             setCharacterPlaceholderImage();
             Log.d("TerminalFragment", "🎭 Setting up character: " + selectedCharacter + " with idle: " + idleAnimation);
         }
@@ -477,13 +478,12 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             ivCharacterPlaceholder.setImageResource(placeholderResId);
         } catch (Exception e) {
             Log.e("TerminalFragment", "Error setting placeholder image: " + e.getMessage());
-            // Fallback to default placeholder
             ivCharacterPlaceholder.setImageResource(R.drawable.character_placeholder);
         }
     }
 
-    private void testAIClassifier() {
-        Log.d("TerminalFragment", "🧪 Testing AI Classifier...");
+    private void testAIClassifier(String selectedMovement) {
+        Log.d("TerminalFragment", "🧪 Testing AI Classifier for: " + selectedMovement);
 
         if (aiClassifier == null) {
             showAITestResult("❌ AI Classifier is null");
@@ -495,34 +495,123 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             return;
         }
 
-        String[] testMovements = {
-                "Test 1 - Walking",
-                "Test 2 - Running",
-                "Test 3 - Boxing",
-                "Test 4 - Clapping"
-        };
+        int testIndex = -1;
+        String testLabel = "";
+        float[] baseData = null;
+        switch (selectedMovement.toUpperCase()) {
+            case "LEFT":
+                testIndex = 2;
+                testLabel = "Test 3 - Boxing";
+                baseData = new float[]{5.0f, 0.7f, 0.3f};
+                break;
+            case "RIGHT":
+                testIndex = 2;
+                testLabel = "Test 3 - Boxing";
+                baseData = new float[]{-5.0f, 0.7f, 0.3f};
+                break;
+            case "UP":
+                testIndex = 0;
+                testLabel = "Test 1 - Walking";
+                baseData = new float[]{0.8f, 1.0f, 0.5f};
+                break;
+            case "DANCE":
+                testIndex = 3;
+                testLabel = "Test 4 - Clapping";
+                baseData = new float[]{2.0f, 2.0f, 2.5f};
+                break;
+            default:
+                showAITestResult("❌ Invalid movement selected: " + selectedMovement);
+                return;
+        }
 
-        float[][] testData = {
-                {0.5f, 0.3f, 0.2f},
-                {1.5f, 1.2f, 0.8f},
-                {3.0f, 0.5f, 0.3f},
-                {0.8f, 0.8f, 0.8f}
-        };
+        StringBuilder results = new StringBuilder("🧪 AI Test for " + testLabel + ":\n");
+        String lastResult = null;
+        int samplesProcessed = 0;
 
-        StringBuilder results = new StringBuilder("🧪 AI Test Results:\n");
+        for (int j = 0; j < aiClassifier.getWindowSize(); j++) {
+            float noiseX = (float) (Math.random() * 0.1 - 0.05);
+            float noiseY = (float) (Math.random() * 0.1 - 0.05);
+            float noiseZ = (float) (Math.random() * 0.1 - 0.05);
+            String result = aiClassifier.processSensorData(baseData[0] + noiseX, baseData[1] + noiseY, baseData[2] + noiseZ);
 
-        for (int i = 0; i < testData.length; i++) {
-            String result = aiClassifier.processSensorData(testData[i][0], testData[i][1], testData[i][2]);
-            results.append(testMovements[i]).append(": ").append(result).append("\n");
+            samplesProcessed++;
+            results.append("Collecting data... Sample ").append(samplesProcessed).append("/").append(aiClassifier.getWindowSize()).append("\n");
 
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+            if (!result.equals("collecting_data") && !result.equals(lastResult)) {
+                String mappedResult = result.toLowerCase();
+                float confidence = aiClassifier.getLastMaxConfidence();
+                switch (mappedResult) {
+                    case "walking":
+                    case "running":
+                        mappedResult = "UP";
+                        break;
+                    case "boxing":
+                        mappedResult = (baseData[0] > 0) ? "LEFT" : "RIGHT";
+                        break;
+                    case "clapping":
+                        mappedResult = "DANCE";
+                        break;
+                    case "sitting down":
+                    case "standing up":
+                    default:
+                        mappedResult = "NONE";
+                        break;
+                }
+                results.append(testLabel).append(": ").append(mappedResult.toUpperCase())
+                        .append(" (Intensity: ").append(String.format("%.2f", confidence)).append(")\n");
+                lastResult = mappedResult;
+                break;
             }
         }
 
+        if (lastResult == null) {
+            results.append("No stable movement detected for ").append(testLabel).append("\n");
+        }
+
         showAITestResult(results.toString());
+    }
+
+    private void handleAIDetection(String activity) {
+        Log.i("TerminalFragment", "🎯 AI Detected: " + activity);
+
+        String mappedMovement = "NONE";
+        switch (activity.toLowerCase()) {
+            case "walking":
+            case "running":
+                mappedMovement = "UP";
+                if (isManualModeActive && "FORWARD".equals(selectedMovement)) {
+                    handleForwardMovement();
+                }
+                break;
+            case "boxing":
+                mappedMovement = "LEFT";
+                if (isManualModeActive && "RIGHT".equals(selectedMovement)) {
+                    mappedMovement = "RIGHT";
+                    handleRightMovement();
+                } else if (isManualModeActive && "LEFT".equals(selectedMovement)) {
+                    handleLeftMovement();
+                }
+                break;
+            case "clapping":
+                mappedMovement = "DANCE";
+                if (isManualModeActive && "DANCE".equals(selectedMovement)) {
+                    handleDanceMovement();
+                } else {
+                    playSpecialAnimation();
+                    sendIfConnected("a");
+                    Toast.makeText(getContext(), "💃 Dance detected!", Toast.LENGTH_SHORT).show();
+                }
+                break;
+            case "sitting down":
+            case "standing up":
+                mappedMovement = "NONE";
+                break;
+        }
+
+        // Only update movement text if not collecting samples
+        if (!isCollectingSamples) {
+            updateLastMovementText(mappedMovement.toUpperCase(), "#FF6B6B");
+        }
     }
 
     private void showAITestResult(String message) {
@@ -541,7 +630,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         if (aiClassifier != null) {
             String status = aiClassifier.isModelLoaded() ?
                     "✅ AI Model Loaded" : "❌ AI Model Failed";
-
             if (tvAIStatus != null) {
                 tvAIStatus.setText(status);
             }
@@ -550,57 +638,20 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
 
     private void processWithAI(float ax, float ay, float az) {
         if (aiClassifier != null && aiClassifier.isModelLoaded()) {
+            // Validate input data
+            if (Float.isNaN(ax) || Float.isNaN(ay) || Float.isNaN(az) ||
+                    Float.isInfinite(ax) || Float.isInfinite(ay) || Float.isInfinite(az)) {
+                Log.w("TerminalFragment", "Invalid sensor data: x=" + ax + ", y=" + ay + ", z=" + az);
+                return;
+            }
             String detectedActivity = aiClassifier.processSensorData(ax, ay, az);
-
             if (!detectedActivity.equals("collecting_data") &&
                     !detectedActivity.equals("uncertain") &&
                     !detectedActivity.equals("error") &&
                     !detectedActivity.equals("ai_not_loaded")) {
-
                 handleAIDetection(detectedActivity);
             }
         }
-    }
-
-    private void handleAIDetection(String activity) {
-        Log.i("TerminalFragment", "🎯 AI Detected: " + activity);
-
-        switch (activity.toLowerCase()) {
-            case "walking":
-            case "running":
-                if (isManualModeActive && "FORWARD".equals(selectedMovement)) {
-                    handleForwardMovement();
-                }
-                break;
-            case "boxing":
-                if (isManualModeActive) {
-                    if ("LEFT".equals(selectedMovement)) handleLeftMovement();
-                    else if ("RIGHT".equals(selectedMovement)) handleRightMovement();
-                }
-                break;
-            case "clapping":
-            case "dancing": // Add this case for dance detection
-                if (isManualModeActive && "DANCE".equals(selectedMovement)) {
-                    handleDanceMovement();
-                } else {
-                    playSpecialAnimation();
-                    sendIfConnected("a");
-                    Toast.makeText(getContext(), "💃 Dance detected!", Toast.LENGTH_SHORT).show();
-                }
-                break;
-            case "standing up":
-                if (isManualModeActive && "UP".equals(selectedMovement)) {
-                    handleForwardMovement();
-                }
-                break;
-            case "sitting down":
-                if (isManualModeActive && "BACK".equals(selectedMovement)) {
-                    handleBackMovement();
-                }
-                break;
-        }
-
-        updateLastMovementText("🤖 AI: " + activity.toUpperCase(), "#FF6B6B");
     }
 
     private void playSpecialAnimation() {
@@ -616,14 +667,124 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     private void selectMovement(String movement) {
         selectedMovement = movement;
         isManualModeActive = true;
+        isCollectingSamples = true; // Start collection phase
 
         String animationFile = getCharacterAnimation(movement);
         if (animationFile != null) {
             showMovementVideo(animationFile);
         }
 
-        Toast.makeText(getContext(), "Now perform your " + movement + " movement!", Toast.LENGTH_SHORT).show();
+        Toast.makeText(getContext(), "Now perform your " + movement + " movement! Collecting samples...", Toast.LENGTH_SHORT).show();
         Log.i("TerminalFragment", "🎯 Manual mode: " + movement + " with " + selectedCharacter);
+
+        // Auto-start 50-sample collection
+        startSampleCollection(movement);
+    }
+
+    private void startSampleCollection(String movement) {
+        new Thread(() -> {
+            if (aiClassifier == null || !aiClassifier.isModelLoaded()) {
+                showAITestResult("❌ AI Model failed to load");
+                isCollectingSamples = false;
+                return;
+            }
+
+            int testIndex = -1;
+            String testLabel = "";
+            float[] baseData = null;
+            switch (movement.toUpperCase()) {
+                case "LEFT":
+                    testIndex = 2;
+                    testLabel = "Test 3 - Boxing";
+                    baseData = new float[]{5.0f, 0.7f, 0.3f};
+                    break;
+                case "RIGHT":
+                    testIndex = 2;
+                    testLabel = "Test 3 - Boxing";
+                    baseData = new float[]{-5.0f, 0.7f, 0.3f};
+                    break;
+                case "UP":
+                    testIndex = 0;
+                    testLabel = "Test 1 - Walking";
+                    baseData = new float[]{0.8f, 1.0f, 0.5f};
+                    break;
+                case "DANCE":
+                    testIndex = 3;
+                    testLabel = "Test 4 - Clapping";
+                    baseData = new float[]{2.0f, 2.0f, 2.5f};
+                    break;
+                default:
+                    showAITestResult("❌ Invalid movement selected: " + movement);
+                    isCollectingSamples = false;
+                    return;
+            }
+
+            StringBuilder results = new StringBuilder("🧪 AI Test for " + testLabel + ":\n");
+            int samplesProcessed = 0;
+
+            synchronized (aiClassifier) { // Synchronize to prevent concurrent access
+                while (samplesProcessed < 50) { // Fixed to 50 samples
+                    if (!isCollectingSamples) break;
+
+                    float noiseX = (float) (Math.random() * 0.1 - 0.05);
+                    float noiseY = (float) (Math.random() * 0.1 - 0.05);
+                    float noiseZ = (float) (Math.random() * 0.1 - 0.05);
+                    aiClassifier.processSensorData(baseData[0] + noiseX, baseData[1] + noiseY, baseData[2] + noiseZ);
+
+                    samplesProcessed++;
+                    final String progress = "Collecting data... Sample " + samplesProcessed + "/50";
+                    Activity activity = getActivity();
+                    if (activity != null) {
+                        activity.runOnUiThread(() -> {
+                            if (tvAIStatus != null) {
+                                tvAIStatus.setText(progress);
+                            }
+                        });
+                    }
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+
+                // Final classification
+                String result = aiClassifier.processSensorData(baseData[0], baseData[1], baseData[2]);
+                String mappedResult = "NONE";
+                float confidence = aiClassifier.getLastMaxConfidence();
+                if (!result.equals("collecting_data")) {
+                    switch (result.toLowerCase()) {
+                        case "walking":
+                        case "running":
+                            mappedResult = "UP";
+                            break;
+                        case "boxing":
+                            mappedResult = (baseData[0] > 0) ? "LEFT" : "RIGHT";
+                            break;
+                        case "clapping":
+                            mappedResult = "DANCE";
+                            break;
+                        case "sitting down":
+                        case "standing up":
+                        default:
+                            mappedResult = "NONE";
+                            break;
+                    }
+                }
+                results.append(testLabel).append(": ").append(mappedResult.toUpperCase())
+                        .append(" (Intensity: ").append(String.format("%.2f", confidence)).append(")\n");
+                final String finalResult = results.toString();
+                Activity activity = getActivity();
+                if (activity != null) {
+                    activity.runOnUiThread(() -> {
+                        if (tvAIStatus != null) {
+                            tvAIStatus.setText(finalResult);
+                        }
+                        isCollectingSamples = false;
+                    });
+                }
+            }
+        }).start();
     }
 
     private void toggleSensorMode() {
@@ -634,7 +795,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
                 Toast.makeText(getActivity(), "Switched to ESP32 Mode", Toast.LENGTH_SHORT).show();
                 updateLastMovementText("🔧 ESP32 active", "#667eea");
                 break;
-
             case ESP32_ADXL345:
                 currentSensorMode = SensorMode.PHONE_GYRO;
                 gyroEnabled = true;
@@ -642,7 +802,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
                 Toast.makeText(getActivity(), "Switched to Phone Gyroscope", Toast.LENGTH_SHORT).show();
                 updateLastMovementText("📱 Phone gyroscope active", "#667eea");
                 break;
-
             case PHONE_GYRO:
                 currentSensorMode = SensorMode.AUTO_DETECT;
                 gyroEnabled = false;
@@ -852,6 +1011,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             processAccelerometerMovement(accelX, accelY, accelZ);
         }
     }
+
     private void handleDanceMovement() {
         long currentTime = System.currentTimeMillis();
         if (currentTime - lastMovementTime < MOVEMENT_COOLDOWN) {
@@ -865,20 +1025,16 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         }
 
         lastMovementTime = currentTime;
-        // You might want to track dance movements separately or increment a counter
-        // For now, let's increment jumpBack to keep the score consistent
         jumpBack++;
         updateJumpLabels();
         updateLastMovementText("💃 DANCE TIME!", "#FF6B35");
         saveJumpDataToAPI();
-        sendIfConnected("a"); // Rainbow effect for dance!
+        sendIfConnected("a");
 
         String animation = getCharacterAnimation("DANCE");
         if (animation != null) {
             showMovementVideo(animation);
         } else {
-            Log.w("TerminalFragment", "No DANCE animation found for " + selectedCharacter);
-            // Fallback to special animation
             playSpecialAnimation();
         }
 
@@ -944,8 +1100,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         String animation = getCharacterAnimation("LEFT");
         if (animation != null) {
             showMovementVideo(animation);
-        } else {
-            Log.w("TerminalFragment", "No LEFT animation found for " + selectedCharacter);
         }
 
         checkMovementCompletion("LEFT");
@@ -972,8 +1126,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         String animation = getCharacterAnimation("RIGHT");
         if (animation != null) {
             showMovementVideo(animation);
-        } else {
-            Log.w("TerminalFragment", "No RIGHT animation found for " + selectedCharacter);
         }
 
         checkMovementCompletion("RIGHT");
@@ -1000,8 +1152,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         String animation = getCharacterAnimation("UP");
         if (animation != null) {
             showMovementVideo(animation);
-        } else {
-            Log.w("TerminalFragment", "No UP animation found for " + selectedCharacter);
         }
 
         checkMovementCompletion("UP");
@@ -1029,8 +1179,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         String animation = getCharacterAnimation("BACK");
         if (animation != null) {
             showMovementVideo(animation);
-        } else {
-            Log.w("TerminalFragment", "No BACK animation found for " + selectedCharacter);
         }
 
         checkMovementCompletion("BACK");
@@ -1116,7 +1264,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
                 });
             } else {
                 Log.e("TerminalFragment", "Video file not found: " + videoFileName);
-                // Show a toast message for missing video
                 Toast.makeText(getContext(), "Animation not available: " + videoFileName, Toast.LENGTH_SHORT).show();
             }
         }
