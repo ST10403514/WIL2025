@@ -11,7 +11,7 @@ import androidx.fragment.app.Fragment;
 public class MainActivity extends AppCompatActivity implements FragmentManager.OnBackStackChangedListener {
 
     private GyroManager gyroManager;
-    private DataSyncManager dataSyncManager;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,8 +27,7 @@ public class MainActivity extends AppCompatActivity implements FragmentManager.O
 
         gyroManager = new GyroManager(getApplicationContext());
 
-        // Optional: Initialize DataSyncManager for app-level sync
-        dataSyncManager = new DataSyncManager(this);
+
     }
 
     public void showOfflineNotification() {

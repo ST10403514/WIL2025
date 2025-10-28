@@ -9,17 +9,28 @@
     <uses-permission android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-
-    <uses-permission
-        android:name="android.permission.BLUETOOTH"
-        android:maxSdkVersion="32" />
-    <uses-permission
-        android:name="android.permission.BLUETOOTH_ADMIN"
-        android:maxSdkVersion="30" /> <!-- >= API 31 -->
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- BLE Permissions for Android 12+ (API 31+) -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation"
+        tools:targetApi="s" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+
+    <!-- Location permission needed for BLE scanning on Android 10-11 -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- Legacy Bluetooth permissions for Android 11 and below -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30" />
+
     <uses-feature android:name="android.hardware.fingerprint" android:required="false" />
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="true" />
 
     <application
         android:allowBackup="true"
@@ -41,7 +52,6 @@
             </intent-filter>
         </receiver>
 
-        <!-- Splash Screen - Now the LAUNCHER activity -->
         <activity
             android:name=".SplashScreen"
             android:exported="true">
@@ -51,23 +61,18 @@
             </intent-filter>
         </activity>
 
-        <!-- Welcome Screen -->
         <activity
             android:name=".WelcomeScreen"
             android:exported="false" />
 
-        <!-- Character Selection Screen -->
         <activity
             android:name=".CharacterSelectionActivity"
             android:exported="false" />
 
-        <!-- Main Activity -->
         <activity
             android:name=".MainActivity"
             android:exported="false"
             android:windowSoftInputMode="stateHidden|adjustResize" />
-
-        <!-- Removed LoginScreen and RegisterScreen activities -->
 
         <service
             android:name=".SerialService"
