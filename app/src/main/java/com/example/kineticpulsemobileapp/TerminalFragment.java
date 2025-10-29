@@ -1,17 +1,19 @@
 package com.example.kineticpulsemobileapp;
 
 import android.widget.VideoView;
+import android.widget.Spinner;
+import android.widget.ArrayAdapter;
 import android.net.Uri;
 import android.media.MediaPlayer;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.bluetooth.BluetoothAdapter;
+
 import android.bluetooth.BluetoothDevice;
-import android.content.ComponentName;
+
 import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
+
 import android.content.SharedPreferences;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -20,11 +22,9 @@ import android.hardware.SensorManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
+
 import android.os.Looper;
-import android.text.Spannable;
-import android.text.SpannableStringBuilder;
-import android.text.style.ForegroundColorSpan;
+
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -40,22 +40,18 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import android.content.pm.PackageManager;
+
 
 import com.google.firebase.auth.FirebaseAuth;
 
 import org.json.JSONObject;
 
-import java.util.ArrayDeque;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
+import android.view.SurfaceHolder;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 public class TerminalFragment extends Fragment {
 
@@ -76,7 +72,6 @@ public class TerminalFragment extends Fragment {
     private Map<String, List<String>> characterAnimationsList;
 
     private AIMovementClassifier aiClassifier;
-    private Button btnTestAI;
     private TextView tvAIStatus;
 
     private SensorManager sensorManager;
@@ -111,7 +106,27 @@ public class TerminalFragment extends Fragment {
     // UI Elements
     private Button btnWhite, btnRed, btnBlue, btnGreen, btnTopaz, btnLilac;
     private Button btnRainbow, btnSeizureMode, btnLEDOff;
-    private Button btnModeToggle, btnMusicPlayer, btnConnectBLE;
+    private Button btnModeToggle, btnConnectBLE;
+
+    // Music Player UI
+    private Spinner songSpinner;
+    private Button btnPlaySong, btnOpenMusicApp;
+    private MediaPlayer mediaPlayer;
+    private Button btnStopSong;
+
+    private MediaPlayer animationPlayer;      // For animation video + sound
+    private boolean isSongPlaying = false;
+    private float animationVolume = 1.0f;    // 1.0 = full, 0.0 = muted
+
+    private boolean isPlaying = false;
+
+    private final String[] songNames = {
+            "Twinkle Twinkle", "Wheels on the Bus", "Old MacDonald", "ABC Song", "Baby Shark"
+    };
+    private final String[] songFiles = {
+            "twinkle", "wheels", "oldmacdonald", "abcsong", "baby_shark"
+    };
+
     private VideoView vvMovementVideo;
     private TextView tvJumpLeft, tvJumpRight, tvJumpMiddle, tvJumpBack;
     private TextView tvLastMovement, tvAchievementBadge;
@@ -392,6 +407,16 @@ public class TerminalFragment extends Fragment {
 
     @Override
     public void onDestroy() {
+        super.onDestroy();
+
+        stopCurrentSong();
+        stopAnimation();
+
+        if (mediaPlayer != null) {
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
+
         if (bleManager != null) {
             bleManager.close();
         }
@@ -430,6 +455,11 @@ public class TerminalFragment extends Fragment {
     public void onPause() {
         super.onPause();
         autoDetectionHandler.removeCallbacksAndMessages(null);
+
+        // Pause music when fragment is paused
+        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+            mediaPlayer.pause();
+        }
     }
 
     @Override
@@ -454,7 +484,6 @@ public class TerminalFragment extends Fragment {
         btnSeizureMode = view.findViewById(R.id.btnSeizureMode);
         btnLEDOff = view.findViewById(R.id.btnLEDOff);
         btnModeToggle = view.findViewById(R.id.btnModeToggle);
-        btnMusicPlayer = view.findViewById(R.id.btnMusicPlayer);
         ivCharacterPlaceholder = view.findViewById(R.id.ivCharacterPlaceholder);
 
         vvMovementVideo = view.findViewById(R.id.vvMovementVideo);
@@ -482,7 +511,24 @@ public class TerminalFragment extends Fragment {
         btnModeToggle.setOnClickListener(v -> toggleSensorMode());
         updateModeToggleButton();
 
-        btnMusicPlayer.setOnClickListener(v -> openMusicAppChooser());
+        // BUILT-IN SONGS SETUP
+        songSpinner = view.findViewById(R.id.song_spinner);
+        btnPlaySong = view.findViewById(R.id.btn_play_song);
+        btnOpenMusicApp = view.findViewById(R.id.btnOpenMusicApp);
+        btnStopSong = view.findViewById(R.id.btn_stop_song);
+        btnStopSong.setOnClickListener(v -> stopCurrentSong());
+
+        // Setup Spinner
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(),
+                android.R.layout.simple_spinner_item, songNames);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        songSpinner.setAdapter(adapter);
+
+        // Play Button
+        btnPlaySong.setOnClickListener(v -> playSelectedSong());
+
+        // External Music Button
+        btnOpenMusicApp.setOnClickListener(v -> openMusicAppChooser());
 
         // BLE Connect button
         if (btnConnectBLE != null) {
@@ -529,7 +575,11 @@ public class TerminalFragment extends Fragment {
     private void setupCharacterDisplay() {
         if (tvCharacterName != null) {
             String charName = selectedCharacter.name();
-            tvCharacterName.setText(charName);
+            if ("LION".equals(charName)) {
+                tvCharacterName.setText("ANIMAL KINGDOM");
+            } else {
+                tvCharacterName.setText(charName);
+            }
         }
 
         showIdleAnimation();
@@ -568,6 +618,125 @@ public class TerminalFragment extends Fragment {
         }
     }
 
+    // ========== MUSIC PLAYER METHODS ==========
+
+    private void playSelectedSong() {
+        // === STEP 1: FULLY CLEANUP OLD PLAYER ===
+        if (mediaPlayer != null) {
+            try {
+                if (mediaPlayer.isPlaying()) {
+                    mediaPlayer.stop();
+                }
+                mediaPlayer.reset(); // <--- THIS IS KEY
+                mediaPlayer.release();
+            } catch (Exception e) {
+                Log.e("MUSIC_DEBUG", "Cleanup error: " + e.getMessage());
+            } finally {
+                mediaPlayer = null;
+            }
+        }
+
+        int position = songSpinner.getSelectedItemPosition();
+        String fileName = songFiles[position];
+
+        Log.d("MUSIC_DEBUG", "=== PLAY SONG CLICKED ===");
+        Log.d("MUSIC_DEBUG", "Selected: " + songNames[position]);
+        Log.d("MUSIC_DEBUG", "Looking for raw/" + fileName + ".mp3");
+
+        int resId = getResources().getIdentifier(fileName, "raw", requireContext().getPackageName());
+        Log.d("MUSIC_DEBUG", "Resource ID = " + resId);
+
+        if (resId == 0) {
+            Toast.makeText(requireContext(), "FILE NOT FOUND: raw/" + fileName + ".mp3", Toast.LENGTH_LONG).show();
+            Log.e("MUSIC_DEBUG", "ERROR: File not found!");
+            return;
+        }
+
+        // === STEP 2: CREATE FRESH MediaPlayer ===
+        mediaPlayer = new MediaPlayer(); // <--- NEW INSTANCE
+
+        try {
+            mediaPlayer.setDataSource(requireContext(), Uri.parse("android.resource://" + requireContext().getPackageName() + "/" + resId));
+
+            mediaPlayer.setOnPreparedListener(mp -> {
+                Log.d("MUSIC_DEBUG", "Media prepared. STARTING...");
+                isSongPlaying = true;
+                isPlaying = true;
+                updateAnimationVolume();  // MUTE ANIMATION
+                updateButtonStates();
+                mp.start();
+            });
+
+            mediaPlayer.setOnCompletionListener(mp -> {
+                Log.d("MUSIC_DEBUG", "Song finished!");
+                Toast.makeText(requireContext(), "Song finished!", Toast.LENGTH_SHORT).show();
+                isSongPlaying = false;
+                isPlaying = false;
+                updateAnimationVolume();
+                updateButtonStates();
+            });
+
+            mediaPlayer.setOnErrorListener((mp, what, extra) -> {
+                Log.e("MUSIC_DEBUG", "MediaPlayer ERROR: " + what + ", " + extra);
+                Toast.makeText(requireContext(), "Playback error", Toast.LENGTH_SHORT).show();
+                return true;
+            });
+
+            Log.d("MUSIC_DEBUG", "Calling prepareAsync()...");
+            mediaPlayer.prepareAsync();
+
+            Toast.makeText(requireContext(), "Playing: " + songNames[position], Toast.LENGTH_SHORT).show();
+
+        } catch (Exception e) {
+            Log.e("MUSIC_DEBUG", "Exception: " + e.getMessage(), e);
+            Toast.makeText(requireContext(), "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            if (mediaPlayer != null) {
+                mediaPlayer.release();
+                mediaPlayer = null;
+            }
+        }
+    }
+
+    private void openMusicAppChooser() {
+        try {
+            Intent intent = new Intent(Intent.ACTION_MAIN);
+            intent.addCategory(Intent.CATEGORY_APP_MUSIC);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(Intent.createChooser(intent, "Choose Music App"));
+        } catch (Exception e) {
+            try {
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setType("audio/*");
+                startActivity(Intent.createChooser(intent, "Choose Music App"));
+            } catch (Exception ex) {
+                Toast.makeText(requireContext(), "No music player found", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void stopCurrentSong() {
+        if (mediaPlayer != null && isSongPlaying) {
+            try {
+                mediaPlayer.stop();
+                mediaPlayer.reset();
+                Log.d("MUSIC_DEBUG", "Song stopped by user");
+                Toast.makeText(requireContext(), "Stopped", Toast.LENGTH_SHORT).show();
+            } catch (Exception e) {
+                Log.e("MUSIC_DEBUG", "Stop error: " + e.getMessage());
+            } finally {
+                isSongPlaying = false;
+                isPlaying = false;
+                updateAnimationVolume();
+                updateButtonStates();
+            }
+        }
+    }
+    private void updateButtonStates() {
+        btnPlaySong.setEnabled(!isPlaying);
+        btnStopSong.setEnabled(isPlaying);
+        btnStopSong.setAlpha(isPlaying ? 1.0f : 0.6f);
+        btnStopSong.setText(isPlaying ? "Stop" : "Stopped");
+    }
     // ========== AI CLASSIFIER METHODS ==========
 
     private void selectMovement(String movement) {
@@ -866,23 +1035,6 @@ public class TerminalFragment extends Fragment {
         btnModeToggle.setText(text);
     }
 
-    private void openMusicAppChooser() {
-        try {
-            Intent intent = new Intent(Intent.ACTION_MAIN);
-            intent.addCategory(Intent.CATEGORY_APP_MUSIC);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(Intent.createChooser(intent, "Choose Music App"));
-        } catch (Exception e) {
-            try {
-                Intent intent = new Intent(Intent.ACTION_VIEW);
-                intent.setType("audio/*");
-                startActivity(Intent.createChooser(intent, "Choose Music App"));
-            } catch (Exception ex) {
-                Toast.makeText(getActivity(), "No music player found", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-
     private void startAutoDetection() {
         autoDetectionEnabled = true;
         autoDetectionHandler.removeCallbacks(autoDetectionRunnable);
@@ -1109,38 +1261,115 @@ public class TerminalFragment extends Fragment {
     }
 
     private void showMovementVideo(String videoFileName) {
-        if (vvMovementVideo != null && getContext() != null) {
-            int resId = getResources().getIdentifier(videoFileName, "raw", getContext().getPackageName());
-            if (resId != 0) {
+        if (getContext() == null || vvMovementVideo == null) return;
+
+        int resId = getResources().getIdentifier(videoFileName, "raw", getContext().getPackageName());
+        if (resId == 0) {
+            Log.e("ANIM", "Video not found: " + videoFileName);
+            return;
+        }
+
+        // Stop previous animation
+        stopAnimation();
+
+        Uri videoUri = Uri.parse("android.resource://" + getContext().getPackageName() + "/" + resId);
+
+        try {
+            animationPlayer = new MediaPlayer();
+            animationPlayer.setDataSource(getContext(), videoUri);
+
+            // Attach to VideoView's Surface
+            vvMovementVideo.getHolder().addCallback(new SurfaceHolder.Callback() {
+                @Override
+                public void surfaceCreated(SurfaceHolder holder) {
+                    animationPlayer.setDisplay(holder);
+                }
+
+                @Override
+                public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+                    // Do nothing
+                }
+
+                @Override
+                public void surfaceDestroyed(SurfaceHolder holder) {
+                    // Do nothing
+                }
+            });
+
+            animationPlayer.setOnPreparedListener(mp -> {
+                vvMovementVideo.setVisibility(View.VISIBLE);
                 if (ivCharacterPlaceholder != null) {
                     ivCharacterPlaceholder.setVisibility(View.GONE);
                 }
 
-                vvMovementVideo.setVisibility(View.VISIBLE);
-                Uri videoUri = Uri.parse("android.resource://" + getContext().getPackageName() + "/" + resId);
-                vvMovementVideo.setVideoURI(videoUri);
+                // Set specific smaller dimensions (adjust as needed)
+                ViewGroup.LayoutParams params = vvMovementVideo.getLayoutParams();
+                params.width = 600;   // pixels
+                params.height = 850;  // pixels
+                vvMovementVideo.setLayoutParams(params);
 
-                vvMovementVideo.setOnPreparedListener(mp -> {
-                    mp.setLooping(false);
-                    vvMovementVideo.start();
-                });
+                mp.setVideoScalingMode(MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT);
+                updateAnimationVolume();
+                mp.start();
+                Log.d("ANIM", "Video+Audio started: " + videoFileName);
+            });
 
-                vvMovementVideo.setOnCompletionListener(mp -> {
-                    vvMovementVideo.setVisibility(View.GONE);
-                    if (ivCharacterPlaceholder != null) {
-                        ivCharacterPlaceholder.setVisibility(View.VISIBLE);
-                    }
-                });
+            animationPlayer.setOnCompletionListener(mp -> {
+                vvMovementVideo.setVisibility(View.GONE);
+                if (ivCharacterPlaceholder != null) {
+                    ivCharacterPlaceholder.setVisibility(View.VISIBLE);
+                }
+                mp.release();
+                animationPlayer = null;
+            });
 
-                vvMovementVideo.setOnErrorListener((mp, what, extra) -> {
-                    Log.e("TerminalFragment", "Video error: " + what + ", " + extra);
-                    vvMovementVideo.setVisibility(View.GONE);
-                    if (ivCharacterPlaceholder != null) {
-                        ivCharacterPlaceholder.setVisibility(View.VISIBLE);
-                    }
-                    return true;
-                });
+            animationPlayer.setOnErrorListener((mp, what, extra) -> {
+                Log.e("ANIM", "MediaPlayer error: " + what + ", " + extra);
+                vvMovementVideo.setVisibility(View.GONE);
+                if (ivCharacterPlaceholder != null) {
+                    ivCharacterPlaceholder.setVisibility(View.VISIBLE);
+                }
+                return true;
+            });
+
+            animationPlayer.prepareAsync();
+
+        } catch (Exception e) {
+            Log.e("ANIM", "Failed to play video: " + e.getMessage());
+        }
+    }
+    // ========== SOUND OF ANIMATION STOP ==========
+
+    private void stopAnimation() {
+        if (animationPlayer != null) {
+            try {
+                if (animationPlayer.isPlaying()) {
+                    animationPlayer.stop();
+                }
+                animationPlayer.reset();
+                animationPlayer.release();
+            } catch (Exception e) {
+                Log.e("ANIM", "Stop animation error: " + e.getMessage());
+            } finally {
+                animationPlayer = null;
             }
+        }
+
+        // Hide video
+        if (vvMovementVideo != null) {
+            vvMovementVideo.setVisibility(View.GONE);
+        }
+        if (ivCharacterPlaceholder != null) {
+            ivCharacterPlaceholder.setVisibility(View.VISIBLE);
+        }
+    }
+
+
+    private void updateAnimationVolume() {
+        if (animationPlayer != null) {
+            float volume = isSongPlaying ? 0.0f : 1.0f;
+            animationPlayer.setVolume(volume, volume);
+            Log.d("ANIM", "Animation volume: " + (isSongPlaying ? "MUTED" : "UNMUTED"));
         }
     }
 
@@ -1204,8 +1433,6 @@ public class TerminalFragment extends Fragment {
         if (tvJumpMiddle != null) tvJumpMiddle.setText(String.valueOf(jumpUp));
         if (tvJumpBack != null) tvJumpBack.setText(String.valueOf(jumpBack));
     }
-
-
 
     // ========== MENU ==========
 

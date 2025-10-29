@@ -8,6 +8,11 @@ import android.widget.ImageView;
 import android.widget.Button;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
+import android.graphics.Outline;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.LayerDrawable;
+import android.view.ViewOutlineProvider;
+import androidx.core.content.ContextCompat;
 
 public class CharacterSelectionActivity extends AppCompatActivity {
 
@@ -53,39 +58,48 @@ public class CharacterSelectionActivity extends AppCompatActivity {
     }
 
     private void selectCharacter(String character, CardView selectedCard) {
-        // Reset all card selections
         resetCardSelection();
 
-        // Highlight selected card with a glowing effect
-        selectedCard.setCardElevation(16f);
-        selectedCard.setCardBackgroundColor(getResources().getColor(android.R.color.holo_orange_light));
+        // Keep original color
+        selectedCard.setCardBackgroundColor(selectedCard.getCardBackgroundColor().getDefaultColor());
 
-        // Add a border to show selection
-        selectedCard.setBackgroundResource(R.drawable.character_selected_border);
+        // Apply THICK PURPLE BORDER using Outline
+        selectedCard.setOutlineProvider(new ViewOutlineProvider() {
+            @Override
+            public void getOutline(View view, Outline outline) {
+                int radius = 25; // Match cardCornerRadius
+                outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), radius);
+            }
+        });
+        selectedCard.setClipToOutline(true);
+
+        // Add elevation + scale
+        selectedCard.setCardElevation(24f);
+        selectedCard.animate().scaleX(1.1f).scaleY(1.1f).setDuration(150).start();
+
+        // Draw border using Canvas (via LayerDrawable)
+        Drawable border = ContextCompat.getDrawable(this, R.drawable.character_selected_border);
+        Drawable background = selectedCard.getBackground();
+        LayerDrawable layerDrawable = new LayerDrawable(new Drawable[]{background, border});
+        selectedCard.setBackground(layerDrawable);
 
         selectedCharacter = character;
     }
 
     private void resetCardSelection() {
-        // Reset lion card
-        if (lionCard != null) {
-            lionCard.setCardElevation(8f);
-            lionCard.setCardBackgroundColor(0xFFF7DC6F); // Golden yellow
-            lionCard.setBackgroundResource(0);
-        }
+        CardView[] cards = {lionCard, boyCard, girlCard};
+        int[] defaultColors = {0xFFF7DC6F, 0xFF3498DB, 0xFF9B59B6};
 
-        // Reset boy card
-        if (boyCard != null) {
-            boyCard.setCardElevation(8f);
-            boyCard.setCardBackgroundColor(0xFF3498DB); // Blue
-            boyCard.setBackgroundResource(0);
-        }
-
-        // Reset girl card
-        if (girlCard != null) {
-            girlCard.setCardElevation(8f);
-            girlCard.setCardBackgroundColor(0xFF9B59B6); // Purple
-            girlCard.setBackgroundResource(0);
+        for (int i = 0; i < cards.length; i++) {
+            CardView card = cards[i];
+            if (card != null) {
+                card.setCardElevation(8f);
+                card.setCardBackgroundColor(defaultColors[i]);
+                card.setBackgroundResource(0); // Remove layered drawable
+                card.setOutlineProvider(null);
+                card.setClipToOutline(false);
+                card.animate().scaleX(1f).scaleY(1f).setDuration(150).start();
+            }
         }
     }
 

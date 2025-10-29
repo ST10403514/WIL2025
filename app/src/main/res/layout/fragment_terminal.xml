@@ -32,7 +32,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Kinetic Pulse"
+                    android:text="🎮 Kinetic Pulse"
                     android:textColor="#FFFFFF"
                     android:textSize="32sp"
                     android:textStyle="bold"
@@ -55,46 +55,22 @@
                     android:fontFamily="sans-serif-medium"
                     android:layout_marginBottom="12dp" />
 
-                <LinearLayout
+                <Button
+                    android:id="@+id/btnModeToggle"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:weightSum="2">
-
-                    <Button
-                        android:id="@+id/btnModeToggle"
-                        android:layout_width="0dp"
-                        android:layout_height="65dp"
-                        android:layout_weight="1"
-                        android:layout_marginEnd="6dp"
-                        android:text="🎯 Auto Mode"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:textColor="#FFFFFF"
-                        android:textAllCaps="false"
-                        android:fontFamily="sans-serif-medium"
-                        android:background="@drawable/modern_button_primary"
-                        android:elevation="6dp" />
-
-                    <Button
-                        android:id="@+id/btnMusicPlayer"
-                        android:layout_width="0dp"
-                        android:layout_height="65dp"
-                        android:layout_weight="1"
-                        android:layout_marginStart="6dp"
-                        android:text="🎵 Music"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:textColor="#FF6B35"
-                        android:textAllCaps="false"
-                        android:fontFamily="sans-serif-medium"
-                        android:background="@drawable/modern_button_secondary"
-                        android:elevation="6dp" />
-                </LinearLayout>
+                    android:layout_height="65dp"
+                    android:text="🎯 Auto Mode"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:textAllCaps="false"
+                    android:fontFamily="sans-serif-medium"
+                    android:background="@drawable/modern_button_primary"
+                    android:elevation="6dp" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- BLE CONNECTION CARD - NEW! -->
+        <!-- BLE CONNECTION CARD -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -356,7 +332,7 @@
                             android:textStyle="bold" />
                     </LinearLayout>
 
-                    <!-- Back Jumps -->
+                    <!-- Back/Dance Jumps -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -493,6 +469,90 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
+        <!-- BUILT-IN KIDS SONGS CARD - NEW! -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:elevation="8dp"
+            app:cardBackgroundColor="#FFEB3B"
+            app:cardCornerRadius="20dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Kids Songs"
+                    android:textColor="#2D3748"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- Song Dropdown -->
+                <Spinner
+                    android:id="@+id/song_spinner"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginBottom="8dp"
+                    android:background="@android:drawable/spinner_background"
+                    android:padding="8dp" />
+
+                <!-- Play Button -->
+                <Button
+                    android:id="@+id/btn_play_song"
+                    android:layout_width="match_parent"
+                    android:layout_height="55dp"
+                    android:text="Play Song"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:textAllCaps="false"
+                    android:fontFamily="sans-serif-medium"
+                    android:background="@drawable/modern_button_primary"
+                    android:elevation="4dp"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- STOP BUTTON -->
+                <Button
+                    android:id="@+id/btn_stop_song"
+                    android:layout_width="match_parent"
+                    android:layout_height="55dp"
+                    android:text="Stop"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:textAllCaps="false"
+                    android:fontFamily="sans-serif-medium"
+                    android:background="@drawable/modern_button_danger"
+                    android:elevation="4dp"
+                    android:enabled="false"
+                    android:alpha="0.6"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- External Music Button -->
+                <Button
+                    android:id="@+id/btnOpenMusicApp"
+                    android:layout_width="match_parent"
+                    android:layout_height="55dp"
+                    android:text="Open Music App"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#FF6B35"
+                    android:textAllCaps="false"
+                    android:fontFamily="sans-serif-medium"
+                    android:background="@drawable/modern_button_secondary"
+                    android:elevation="4dp" />
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
         <!-- LED Controls -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
@@ -558,7 +618,6 @@
                         android:layout_height="55dp"
                         android:layout_weight="1"
                         android:layout_marginStart="4dp"
-                        android:layout_marginEnd="4dp"
                         android:text="🔵"
                         android:textSize="18sp"
                         android:textColor="#2D3748"
@@ -607,7 +666,6 @@
                         android:layout_height="55dp"
                         android:layout_weight="1"
                         android:layout_marginStart="4dp"
-                        android:layout_marginEnd="4dp"
                         android:text="🟣"
                         android:textSize="18sp"
                         android:textColor="#2D3748"
@@ -691,7 +749,6 @@
                     android:gravity="center"
                     android:fontFamily="sans-serif-medium"
                     android:layout_marginBottom="8dp" />
-
 
                 <TextView
                     android:id="@+id/tvAIStatus"

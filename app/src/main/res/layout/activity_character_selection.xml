@@ -118,8 +118,7 @@
                             android:elevation="8dp"
                             app:cardCornerRadius="25dp"
                             app:cardBackgroundColor="#FFD700"
-                            app:cardElevation="8dp"
-                            android:background="@drawable/character_selected_border">
+                            app:cardElevation="8dp">
 
                             <ImageView
                                 android:id="@+id/lion_image"
@@ -136,7 +135,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Leo the Lion"
+                            android:text="Animal Kingdom"
                             android:textColor="#2D3748"
                             android:textSize="16sp"
                             android:textStyle="bold"
@@ -169,8 +168,7 @@
                             android:elevation="8dp"
                             app:cardCornerRadius="25dp"
                             app:cardBackgroundColor="#3498DB"
-                            app:cardElevation="8dp"
-                            android:background="@drawable/character_selected_border">
+                            app:cardElevation="8dp">
 
                             <ImageView
                                 android:id="@+id/boy_image"
@@ -207,10 +205,10 @@
                     <!-- Girl Character -->
                     <LinearLayout
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
+                        android:layout_height="match_parent"
                         android:layout_weight="1"
-                        android:orientation="vertical"
                         android:gravity="center"
+                        android:orientation="vertical"
                         android:padding="12dp">
 
                         <androidx.cardview.widget.CardView
@@ -218,40 +216,39 @@
                             android:layout_width="120dp"
                             android:layout_height="120dp"
                             android:elevation="8dp"
-                            app:cardCornerRadius="25dp"
                             app:cardBackgroundColor="#9B59B6"
-                            app:cardElevation="8dp"
-                            android:background="@drawable/character_selected_border">
+                            app:cardCornerRadius="25dp"
+                            app:cardElevation="8dp">
 
                             <ImageView
                                 android:id="@+id/girl_image"
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
-                                android:src="@drawable/character_girl"
-                                android:scaleType="centerCrop"
+                                android:background="#9B59B6"
                                 android:contentDescription="Girl character"
                                 android:padding="16dp"
-                                android:background="#9B59B6" />
+                                android:scaleType="centerCrop"
+                                android:src="@drawable/character_girl" />
 
                         </androidx.cardview.widget.CardView>
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
                             android:text="Luna the Dancer"
                             android:textColor="#2D3748"
                             android:textSize="16sp"
-                            android:textStyle="bold"
-                            android:layout_marginTop="12dp" />
+                            android:textStyle="bold" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Graceful &amp; Energetic"
+                            android:gravity="center"
+                            android:text="Energetic"
                             android:textColor="#FF6B35"
                             android:textSize="13sp"
-                            android:textStyle="normal"
-                            android:gravity="center" />
+                            android:textStyle="normal" />
 
                     </LinearLayout>
 
