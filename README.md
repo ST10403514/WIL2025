@@ -475,6 +475,10 @@ Follow these steps to get the **Kinetic Cape Project** up and running.
   <a href="https://github.com/ST10249644" target="_blank">
     <img src="https://avatars.githubusercontent.com/u/128413984?v=4" width="80" height="80" style="border-radius: 50%;" alt="Shreya Dhawrajh"/>
   </a>
+   &nbsp;&nbsp;
+  <a href="https://github.com/ST10143151" target="_blank">
+    <img src="https://avatars.githubusercontent.com/u/127833023?v=4" width="80" height="80" style="border-radius: 50%;" alt="Matthew Mason"/>
+  </a>
 </p>
 
 ---
