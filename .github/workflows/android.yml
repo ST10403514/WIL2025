@@ -17,12 +17,50 @@ jobs:
           cache: gradle
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
-        with:
-          cache-disabled: false
-      - name: Create dummy google-services.json for debug
+      - name: Create google-services.json for debug
         run: |
           mkdir -p app/src/debug
-          echo '{"project_info": {"project_id": "dummy"}}' > app/src/debug/google-services.json
+          cat > app/src/debug/google-services.json << 'EOF'
+          {
+            "project_info": {
+              "project_number": "319650631282",
+              "project_id": "wil2025-1b908",
+              "storage_bucket": "wil2025-1b908.firebasestorage.app"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:319650631282:android:84dd04883de0e45ce9bceb",
+                  "android_client_info": {
+                    "package_name": "com.example.kineticpulsemobileapp"
+                  }
+                },
+                "oauth_client": [
+                  {
+                    "client_id": "319650631282-gcpm20pk3loqde0ntfgam60etchavah4.apps.googleusercontent.com",
+                    "client_type": 3
+                  }
+                ],
+                "api_key": [
+                  {
+                    "current_key": "AIzaSyAwyTjhXaEeaRFw6sGUn646hByzU61iq6Q"
+                  }
+                ],
+                "services": {
+                  "appinvite_service": {
+                    "other_platform_oauth_client": [
+                      {
+                        "client_id": "319650631282-gcpm20pk3loqde0ntfgam60etchavah4.apps.googleusercontent.com",
+                        "client_type": 3
+                      }
+                    ]
+                  }
+                }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          EOF
       - name: Run Unit Tests
         run: ./gradlew testDebugUnitTest
       - name: Upload Test Reports
