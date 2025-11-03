@@ -9,24 +9,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-
+          cache: gradle
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
-
-      - name: Configure GLOBAL gradle.properties (fixes google-services)
+        with:
+          cache-disabled: false
+      - name: Create dummy google-services.json for debug
         run: |
-          mkdir -p ~/.gradle
-          echo -e "android.nonTransitiveRClass=true\nandroid.useAndroidX=true\nandroid.enableJetifier=true\ncom.google.gms.google-services.skip=true\norg.gradle.jvmargs=-Xmx4g -Dfile.encoding=UTF-8\norg.gradle.caching=true\norg.gradle.parallel=true" > ~/.gradle/gradle.properties
-
+          mkdir -p app/src/debug
+          echo '{"project_info": {"project_id": "dummy"}}' > app/src/debug/google-services.json
       - name: Run Unit Tests
-        run: ./gradlew testDebugUnitTest --info
-
+        run: ./gradlew testDebugUnitTest
       - name: Upload Test Reports
         if: always()
         uses: actions/upload-artifact@v4
