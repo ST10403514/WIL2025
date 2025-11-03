@@ -8,9 +8,6 @@ For this ReadMe this is the template I used:
 othneildrew., 2024. Best-README-Template (version 1.1.2) [Source code]. Available at:< https://github.com/othneildrew/Best-README-Template.git> Accessed 26 April 2025].
 -->
 
-<p align="center">
-  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=30&pause=1000&color=00F57C&center=true&vCenter=true&width=500&lines=Welcome+to+Kinetic+Cape!;Smart+Motion+Tracking!;BLE+Connected+Experience!⚙️" alt="Typing SVG" />
-</p>
 
 <h3 align="center">Kinetic Cape - Motion-Based Smart Wearable System</h3>
 
