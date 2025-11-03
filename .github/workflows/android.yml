@@ -21,23 +21,12 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Configure gradle.properties
+      - name: Configure gradle.properties for CI
         run: |
-          cat >> gradle.properties << EOF
-          android.nonTransitiveRClass=true
-          android.useAndroidX=true
-          android.enableJetifier=true
-          com.google.gms.googleservices.skip=true
-          org.gradle.jvmargs=-Xmx4g -Dfile.encoding=UTF-8
-          org.gradle.caching=true
-          org.gradle.parallel=true
-          EOF
+          echo -e "android.nonTransitiveRClass=true\nandroid.useAndroidX=true\nandroid.enableJetifier=true\ncom.google.gms.googleservices.skip=true\norg.gradle.jvmargs=-Xmx4g -Dfile.encoding=UTF-8\norg.gradle.caching=true\norg.gradle.parallel=true" > gradle.properties
 
       - name: Run Unit Tests
         run: ./gradlew testDebugUnitTest --info
-
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug
 
       - name: Upload Test Reports
         if: always()
@@ -47,10 +36,3 @@ jobs:
           path: |
             **/build/reports/tests/
             **/build/test-results/
-
-      - name: Upload Debug APK
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
