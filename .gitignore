@@ -1,0 +1,32 @@
+# Build files
+build/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+bin/
+gen/
+out/
+.gradle/
+local.properties
+
+# Claude
+.claude/
+
+# ProGuard
+proguard-rules.pro
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+*.swp
+.DS_Store
+
+# Captures
+captures/
+.externalNativeBuild
+.cxx

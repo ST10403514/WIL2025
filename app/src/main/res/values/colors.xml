@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- MoveWithMe App Colors -->
+    <color name="pulse_logo_color">#4ECDC4</color>
+    <color name="pulse_heart_color">#FF6B35</color>
+</resources>
