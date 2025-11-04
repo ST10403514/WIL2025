@@ -529,14 +529,633 @@ https://youtu.be/CvzNfTqnxUU?si=aARr4WCpNzfQdY9C
 
 ---
 
-## 🔍 References
+## 🔍 Acknowledgements
 
-- Espressif Systems, 2024. *ESP32 Documentation.* [Online] Available at: <https://www.espressif.com/>  
-- TDK InvenSense, 2024. *MPU6050 Product Datasheet.* [Online] Available at: <https://invensense.tdk.com/>  
-- NimBLE-Arduino Library, 2023. [Source Code] Available at: <https://github.com/h2zero/NimBLE-Arduino>  
-- Adafruit NeoPixel Library, 2024. [Online] Available at: <https://github.com/adafruit/Adafruit_NeoPixel>  
-- Android Developers, 2024. *Bluetooth Low Energy Overview.* [Online] Available at: <https://developer.android.com/guide/topics/connectivity/bluetooth/ble-overview>  
-- othneildrew., 2024. *Best-README-Template (version 1.1.2).* [Source code] Available at: <https://github.com/othneildrew/Best-README-Template.git>
+Reference List
+Andreas Spiess, 2017. #173 ESP32 Bluetooth BLE with Arduino IDE (Tutorial) and Polar H7. [video online] Available at : < https://youtu.be/2mePPqiocUE?si=Up7wtPTHQwVUEOI8> [Accessed 12 September 2025].
+
+Android Developers, 2025. Add menus. [online] Available at: <https://developer.android.com/develop/ui/views/components/menus#fragments> [Accessed 12 July 2025].
+
+Android Developers, 2025. Asynchronous work with Java threads. [online] Available at: <https://developer.android.com/develop/background-work/background-tasks/asynchronous/java-threads> [Accessed 02 September 2025].
+
+Android Developers, 2025. Behavior changes: Apps targeting Android 12. [online] Available at: <https://developer.android.com/about/versions/12/behavior-changes-12> [Accessed 20 July 2025].
+
+Android Developers, 2025. Bluetooth permissions. [online] Available at: <https://developer.android.com/develop/connectivity/bluetooth/bt-permissions> [Accessed 12 September 2025].
+
+Android Developers, 2025. Color. [online] Available at: <https://developer.android.com/reference/android/graphics/Color#parseColor(java.lang.String)> [Accessed 20 April 2025].
+
+Android Developers, 2025. Enum. [online] Available at: <https://developer.android.com/reference/java/lang/Enum> [Accessed 09 August 2025].
+
+Android Developers, 2025. Localize your app. [online] Available at: <https://developer.android.com/guide/topics/resources/localization> [Accessed 12 July 2025].
+
+Android Developers, 2025. Motion sensors. [online] Available at: <https://developer.android.com/develop/sensors-and-location/sensors/sensors_motion> [Accessed 15 August 2025].
+
+Android Developers, 2025. Request runtime permissions. [online] Available at: <https://developer.android.com/training/permissions/requesting> [Accessed 09 August 2025].
+
+Android Developers, 2025. SensorManager. [online] Available at: <https://developer.android.com/reference/android/hardware/SensorManager> [Accessed 15 August 2025].
+
+Android Developers, 2025. Sensors Overview. [online] Available at: <https://developer.android.com/develop/sensors-and-location/sensors/sensors_overview> [Accessed 18 August 2025].
+
+Android Developers, 2025. SpannableStringBuilder. [online] Available at: <https://developer.android.com/reference/android/text/SpannableStringBuilder> [Accessed 02 September 2025].
+
+Android knowledge, 2023. Fragment in Android Studio using Kotlin | Android Knowledge. [video online] Available at: < https://youtu.be/fT4MVQZWPRg?si=q2bBwA3vmjdSwaNN> [Accessed 12 July 2025].
+
+Arduino Titan, 2024. MPU6050 Gyroscope+OLED display Interfacing with ESP32 | Wokwi Esp32 simulator | Arduino Titan. [video online] Available at: < https://youtu.be/KRoAsYJScEc?si=WdXZIPNDkbzj0guN> [Accessed 09 August 2025].
+
+ATECHS, 2025. MPU6050 Explained | Motion Detection with ESP32 and Arduino!?. [video online] Available at: < https://youtu.be/rpCcZZJeodY?si=Ka3BX6-anw7aJjSY> [Accessed 09 August 2025].
+
+BINARYUPDATES, 2023. How to Setup and Program ESP32 Microcontroller– Complete Guide. [video online] Available at: < https://youtu.be/AitCKcyjHuQ?si=kBwSdBYFv9w4CAeU> [Accessed 12 September 2025].
+
+Bharath kumar, 2023. ESP-32 with MPU-6050 Accelerometer, Gyroscope and Temperature Sensor (Arduino). [video online] Available at: < https://youtu.be/1Su4HbPHZn0?si=p3EW1X_HQyGMlSwu> [Accessed 12 September 2025].
+
+Brand Store, 2024. How to Get google-services.json File from Firebase for Your App (Step-by-Step Guide). [video online] Available at: < https://youtu.be/w1EPb-Jl1_U?si=wKFNSWMm6zv4f2sk> [Accessed 15 April 2025].
+
+C# Corner, 2022. How to use weightSum and layout_weight In Linear Layout. [online] Available at: <https://www.c-sharpcorner.com/article/how-to-use-weightsum-and-layoutweight-in-linear-layout/> [Accessed 12 July 2025].
+
+CapTech, 2020. Android Activity Result Contracts. [online] Available at: <https://www.captechconsulting.com/technical/android-activity-result-contracts> [Accessed 15 July 2025].
+
+Chris Maher, 2022. How To Install WLED on an ESP32 Board and Connect / Control Addressable LEDs. [video online] Available at: < https://youtu.be/TOEnFKLm9Sw?si=P9IigSvD8HCnyAGy> [Accessed 12 September 2025].
+
+CodePath Cliffnotes, 2015. Listening to Sensors using SensorManager. [online] Available at: <https://guides.codepath.com/android/Listening-to-Sensors-using-SensorManager> [Accessed 18 August 2025].
+
+Core Electronics, 2022. How to Easily Control Addressable LEDs with an ESP32 or ESP8266 | WLED Project. [video online] Available at: < https://youtu.be/GYxctjukehY?si=xNlYUkqMdVG-c4uX> [Accessed 13 September 2025].
+
+CS CORNER Sunita Rai, 2025. How to Connect Mobile Phone with Android Studio to Run App [2025] |Connect Phone With Android Studio. [video online] Available at: < https://youtu.be/9Tt8uLUgSj8?si=y_yUgMfCP_UcPWGN> [Accessed 20 March 2025].
+
+Desktop Make, 2022. #2 How to connect ESP32 to ESP32 by Bluetooth (ESP32 Programming). [video online] Available at: < https://youtu.be/3SjGH0J7KPY?si=3tfhtDyAHBYSE6Z2> [Accessed 13 September March 2025].
+
+DigitalOcean, 2022. Retrofit Android Example Tutorial. [online] Available at: <https://www.digitalocean.com/community/tutorials/retrofit-android-example-tutorial> [Accessed  20 July 2025].
+
+DIY TechRush, 2022. ESP32 Bluetooth Classic - ESP32 Beginner's Guide. [video online] Available at: < https://youtu.be/EWxM8Ixnrqo?si=SnWwI6mTLC3qOQze> [Accessed 12 September 2025].
+
+DEV Community, 2025. Serial communication with Android device. [online] Available at: <https://dev.to/bleuiot/serial-communication-with-android-device-481o> [Accessed 10 July 2025].
+
+DroneBot Workshop, 2024. Bluetooth Classic & BLE with ESP32. [video online] Available at: < https://youtu.be/0Q_4q1zU6Zc?si=eCU72Qw5J1fP4eLG> [Accessed 13 September 2025].
+Elconics, 2023. Send Sensor data to Firebase using ESP32 | Cloud setup | Arduino Coding | Firebase Realtime Database. [video online] Available at: < https://youtu.be/cm-Qe2HMJGk?si=abRgEFNIQMgLDNc1> [Accessed 13 September 2025].
+
+Foxandroid, 2023. Fragments Implementation using Kotlin || Fragments using Kotlin || Android Studio Tutorial || 2023. [video online] Available at: < https://youtu.be/h-NcxT697Nk?si=eMUYyDbMERJUqhAW> [Accessed 12 July 2025].
+
+GeeksforGeeks, 2025. Foreground Service in Android. [online] Available at: <https://www.geeksforgeeks.org/android/foreground-service-in-android/> [Accessed 10 July 2025].
+
+GeeksforGeeks, 2025. How to Build an Application to Test Motion Sensors in Android?. [online] Available at: <https://www.geeksforgeeks.org/android/how-to-build-an-application-to-test-motion-sensors-in-android/> [Accessed 15 August 2025].
+
+GeeksforGeeks, 2025. How to Display the List of Sensors Present in an Android Device Programmatically?. [online] Available at: <https://www.geeksforgeeks.org/android/how-to-display-the-list-of-sensors-present-in-an-android-device-programmatically/> [Accessed 15 August 2025].
+
+GeeksforGeeks, 2022. How to Create an Alert Dialog Box in Android?. [online] Available at: <https://www.geeksforgeeks.org/android/how-to-create-an-alert-dialog-box-in-android/> [Accessed 10 May 2025].
+
+GeeksforGeeks, 2025. How to Call a Method After a Delay in Android?. [online] Available at: <https://www.geeksforgeeks.org/kotlin/how-to-call-a-method-after-a-delay-in-android/> [Accessed 04 September 2025].
+
+Github, 2025. Glide. [online] Available at: <https://github.com/bumptech/glide> [Accessed 02 October 2025].
+
+How Do You? DIY, 2020. Desoldering | Soldering Basics | Soldering for Beginners. [video online] Available at: < https://youtu.be/bG7yW9FigJA?si=PA6MNCmEAtXlbG6S> [Accessed 02 August 2025].
+
+InfyOm Technologies, 2021. How to Change App Language in Android Programmatically?. [online] Available at: <https://infyom.com/blog/how-to-change-app-language-in-android-programmatically/> [Accessed 02 September 2025].
+
+KB CODER, 2021. Play Audio in Android Studio | Kotlin | Android Tutorials. [video online] Available at: < https://youtu.be/gXbrjvUaHYc?si=BYq0DLBNXu_fAjpU> [Accessed 20 September 2025].
+
+LeftyMaker, 2017. Breadboard tutorial: How to use a breadboard (for beginners). [video online] Available at: < https://youtu.be/W6mixXsn-Vc?si=6BlaoWsYZWSnxQSw> [Accessed 02 August 2025].
+
+MAINFRAME, 2021. Setting up an ESP32 with Arduino IDE. [video online] Available at: < https://youtu.be/CD8VJl27n94?si=vpaU8xNPWKMLQYdY> [Accessed 09 August 2025].
+
+Mammothlnteractive, 2021. Build Android App with TensorFlow Lite Machine Learning Model. [video online] Available at: < https://youtu.be/o5c2BLrxNyA?si=6FQGl8tCBWBbOB1B> [Accessed 15 September 2025].
+
+Medium, 2021. Android Runtime Permissions using registerForActivityResult. [online] Available at: <https://medium.com/codex/android-runtime-permissions-using-registerforactivityresult-68c4eb3c0b61> [Accessed 09 August 2025].
+
+Medium, 2024. Establishing Connection with Bluetooth Classic in Android. [online] Available at: <https://blog.stackademic.com/establishing-connection-with-bluetooth-classic-in-android-1f9f17c9a452> [Accessed 12 September 2025].
+
+Medium, 2023. Image Loading with Jetpack Compose; Glide-Coil Libraries. [online] Available at: <https://medium.com/@selinihtiyar/image-loading-with-jetpack-compose-glide-coil-359c8d05c944> [Accessed 02 October 2025].
+
+Medium, 2024. Understanding Handlers, Loopers, and Message Queues in Android: A Practical Guide with Code Examples. [online] Available at: <https://medium.com/@mohamed.ma872/understanding-handlers-loopers-and-message-queues-in-android-a-practical-guide-with-code-515162d1d792> [Accessed 05 September 2025].
+
+Microsoft Learn, [s.a.]. BluetoothDevice.Name Property. [online] Available at: <https://learn.microsoft.com/en-us/dotnet/api/android.bluetooth.bluetoothdevice.name?view=net-android-35.0> [Accessed 12 September 2025].
+
+Nelson Darwin Pak Tech, 2023. simulation of esp32 with mpu6050 | simulation of esp32 with gyroscope and accelerometer. [video online] Available at: < https://youtu.be/v5a7aZJiI-k?si=hFn18iTR5Piq7eXB> [Accessed 09 August 2025].
+Oracle, [s.a.]. String (Java Platform SE 8 ) - Oracle. [online] Available at: <https://docs.oracle.com/javase/8/docs/api/java/lang/String.html#String-byte:A-> [Accessed 02 September 2025].
+
+Oracle, [s.a.]. Float (Java Platform SE 8 ) - Oracle. [online] Available at: <https://docs.oracle.com/javase/8/docs/api/java/lang/Float.html#parseFloat-java.lang.String-> [Accessed 02 September 2025].
+
+Programming Concepts, 2025. ESP32 IoT Project using Firebase, Android Studio and Arduino IDE | Programming Concepts. [video online] Available at: < https://youtu.be/Z4UilZuN1cU?si=sOYQfro5EXLI8BZE> [Accessed 15 April 2025].
+
+Rui Santos, 2019. ESP32 Bluetooth Classic with Arduino IDE - Getting Started. [video online] Available at: < https://youtu.be/RStncO3zb8g?si=pOiaO_HdAWeglaDn> [Accessed 05 September 2025].
+
+Robocraze, 2019. GETTING STARTED WITH ESP-NOW. [video online] Available at: < https://youtu.be/B6NZWLKGoCA?si=FMnKa7NBqculLYwP> [Accessed 15 April 2025].
+
+Rui Santos, 2018. Getting Started with ESP32 Bluetooth Low Energy (BLE) on Arduino IDE. [video online] Available at: < https://youtu.be/wkO-ytWVvC0?si=C8SPcKPqYNiYX_Uw> [Accessed 25 August 2025].
+
+Ralph S Bacon, 2022. #239 Using An ESP32 with 🟢🔴🔵NeoPixels - What Went Wrong? Simple Fix!. [video online] Available at: < https://youtu.be/SStRG-_1wXc?si=Zdai79N_7MJUJsfJ> [Accessed 13 September 2025].
+
+Ratchets and Wrenches, 2015. How to Use a Multimeter for Beginners - How to Measure Voltage, Resistance, Continuity and Amps. [video online] Available at: < https://youtu.be/TdUK6RPdIrA?si=KrW1cMTpsUOqKYtq> [Accessed 22 March 2025].
+
+Stack Overflow, 2025. How do we use runOnUiThread in Android?. [online] Available at: <https://stackoverflow.com/questions/11140285/how-do-we-use-runonuithread-in-android> [Accessed 09 August 2025].
+
+Superb Tech, 2021. MPU6050 Sensor Arduino Tutorial. [video online] Available at: < https://youtu.be/a37xWuNJsQI?si=Lc78AH2PCpMzIIBb> [Accessed 20 June 2025].
+SriTu Hobby, 2022. What is the ESP32 board and how to set up it with Arduino IDE?. [video online] Available at: < https://youtu.be/wsKTmlipQOE?si=5WpvQltEB_nNlixh> [Accessed 09 August 2025].
+
+Taqnix, 2025. How to Generate Google Service JSON File for Firebase – Step-by-Step Guide!. [video online] Available at: < https://youtu.be/ixp7X9eaVFc?si=KM_1eRwNF01LbzBP> [Accessed 15 April 2025].
+
+TensorFlow, 2018. Add TensorFlow Lite to your Android App (TensorFlow Tip of the Week). [video online] Available at: < https://youtu.be/RhjBDxpAOIc?si=hRXBQqA-vKmhZW4m> [Accessed 15 September 2025].
+
+The Frugal Engineer, 2022. Android Studio Tutorial: Create an app to connect the Arduino using Bluetooth and RxAndroid. [video online] Available at: < https://youtu.be/aE8EbDmrUfQ?si=czHGNL6GKnFt8-mH> [Accessed 12 September 2025].
+
+Trevor Elkins Blog, 2015. Should I use Enums in Android. [online] Available at: <https://www.telkins.dev/blog/should-i-use-enums-in-android> [Accessed 09 August 2025].
+
+Tutlane, [s.a.]. Android Toast with Examples. [online] Available at: <https://www.tutlane.com/tutorial/Android/android-toast-with-examples#:~:text=In%20android%2C%20we%20can%20create%20a%20Toast%20by,the%20Toast%20notification%20by%20using%20show%20%28%29%20method> [Accessed 10 July August 2025].
+
+Vogella, 2016. Android logging - Tutorial. [online] Available at: <https://www.vogella.com/tutorials/AndroidLogging/article.html> [Accessed 12 July 2025].
+
+Zeeshan Academy, 2021. How to use fragments in Android Studio | Understanding Fragments for Multi Layout App. [video online] Available at: < https://youtu.be/PiExmkR3aps?si=CCyNts92yudaIv87> [Accessed 12 July 2025].
+
+
+
+
+
+
+
+Annexure
+• Title: Disclosure of AI Usage in my Assessment. 
+• Section(s) within the assessment in which generative AI was used: ESP32 Guidance
+• Name of AI tool(s) used: ChatGPT
+• Purpose/intention behind use: Seeking knowledge about viewing ESP32 code. 
+• Date(s) in which generative AI was used: 05 September 2025
+• A link to the actual generative AI chat, and screenshots of the chat: https://chatgpt.com/share/690a212e-cdec-8010-8514-0352a87da9ad 
+
+
+<img width="938" height="478" alt="image" src="https://github.com/user-attachments/assets/340bcd74-fd2b-410d-ad34-40cfb6f081e5" />
+<img width="940" height="483" alt="image" src="https://github.com/user-attachments/assets/26a915c0-3752-4d33-bfb9-ac9fb625c817" />
+<img width="940" height="481" alt="image" src="https://github.com/user-attachments/assets/b4e9e9a4-d686-4bd3-b8e7-97ea987fd2b1" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+• Title: Disclosure of AI Usage in my Assessment. 
+• Section(s) within the assessment in which generative AI was used: Adding GIFs to Android project.
+• Name of AI tool(s) used: ChatGPT
+• Purpose/intention behind use: Seeking Information on how to add GIFs to an android project. 
+• Date(s) in which generative AI was used: 16 August 2025
+• A link to the actual generative AI chat, and screenshots of the chat: https://chatgpt.com/share/690a219a-8ee8-8010-b336-257f44e213b3 
+
+
+<img width="938" height="465" alt="image" src="https://github.com/user-attachments/assets/88ec8d6e-33c3-4a0d-8013-c789aa748179" />
+<img width="940" height="474" alt="image" src="https://github.com/user-attachments/assets/67b3b9e4-8ee9-41f4-990c-55d1e8dacea8" />
+<img width="938" height="474" alt="image" src="https://github.com/user-attachments/assets/0360d113-079d-409c-b1e3-726fc249122a" />
+<img width="937" height="467" alt="image" src="https://github.com/user-attachments/assets/c8cbe68a-5019-4e56-8eb6-3a89f52c7ced" />
+<img width="939" height="470" alt="image" src="https://github.com/user-attachments/assets/fad0d638-c68d-463c-ac06-ae2e65c61581" />
+<img width="939" height="465" alt="image" src="https://github.com/user-attachments/assets/f327afbd-1d17-4a3b-ae9a-f6316b7d5f8f" />
+<img width="939" height="468" alt="image" src="https://github.com/user-attachments/assets/458dd954-0ea0-445f-98cb-a27387644c3d" />
+<img width="940" height="471" alt="image" src="https://github.com/user-attachments/assets/f8bb6794-df36-4617-a560-f06e7138b9c5" />
+<img width="938" height="468" alt="image" src="https://github.com/user-attachments/assets/be6233c9-14c3-461f-8950-65575c3cfaa3" />
+<img width="939" height="466" alt="image" src="https://github.com/user-attachments/assets/373c9de4-6324-4d4f-aac4-50e806e11522" />
+<img width="939" height="467" alt="image" src="https://github.com/user-attachments/assets/074a1b7c-8476-4157-85b5-8f6ae0c1239f" />
+<img width="939" height="469" alt="image" src="https://github.com/user-attachments/assets/dbc8328c-5fb2-440d-a44e-32ab5bbf55b5" />
+<img width="939" height="466" alt="image" src="https://github.com/user-attachments/assets/34c373c4-8cbf-4a1b-ae9c-6ccd805a7e45" />
+<img width="938" height="462" alt="image" src="https://github.com/user-attachments/assets/1e9884d0-7a2c-4051-bc6d-7c66e1ebdb2e" />
+<img width="939" height="470" alt="image" src="https://github.com/user-attachments/assets/908f08ef-2bf9-4eec-ab46-78b43b236ca3" />
+<img width="937" height="465" alt="image" src="https://github.com/user-attachments/assets/9dbd103f-aba6-4b5c-a1ee-5d1cb317d644" />
+<img width="940" height="403" alt="image" src="https://github.com/user-attachments/assets/25d32f43-1b70-40ac-b9b0-213a760cfd62" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+• Title: Disclosure of AI Usage in my Assessment. 
+• Section(s) within the assessment in which generative AI was used: Breadboard/Hardware
+• Name of AI tool(s) used: ChatGPT
+• Purpose/intention behind use: Seeking information on a scenario regarding setup of components. 
+• Date(s) in which generative AI was used: 05 August 2025
+• A link to the actual generative AI chat, and screenshots of the chat: https://chatgpt.com/share/690a21b0-55e4-8010-bcc0-84172d178330 
+
+
+<img width="939" height="464" alt="image" src="https://github.com/user-attachments/assets/388bfde7-3df3-4c08-9d4d-ad3dba167091" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+• Title: Disclosure of AI Usage in my Assessment. 
+• Section(s) within the assessment in which generative AI was used: ESP32/Hardware
+• Name of AI tool(s) used: ChatGPT
+• Purpose/intention behind use: Seeking information on connecting batteries to ESP32. 
+• Date(s) in which generative AI was used: 10 September 2025
+• A link to the actual generative AI chat, and screenshots of the chat: https://chatgpt.com/share/68ebb7fe-121c-8010-ba54-17a572c6e884 
+
+
+<img width="938" height="464" alt="image" src="https://github.com/user-attachments/assets/451fc44b-28d8-4830-a972-57f78fe23caf" />
+<img width="937" height="462" alt="image" src="https://github.com/user-attachments/assets/61a72442-c342-45d3-a46b-1b49b1df29e8" />
+<img width="939" height="462" alt="image" src="https://github.com/user-attachments/assets/19a69402-c74c-4c17-b6eb-2d27885b94d9" />
+<img width="940" height="467" alt="image" src="https://github.com/user-attachments/assets/b4897cbb-e655-409d-ab33-753ce0595e3c" />
+<img width="939" height="465" alt="image" src="https://github.com/user-attachments/assets/fa18cfd7-7aac-4f23-a1ec-7f67d1c75492" />
+<img width="937" height="261" alt="image" src="https://github.com/user-attachments/assets/c7336567-27b6-4831-b976-334b1f80a1a2" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+• Title: Disclosure of AI Usage in my Assessment. 
+• Section(s) within the assessment in which generative AI was used: Google Services error
+• Name of AI tool(s) used: ChatGPT
+• Purpose/intention behind use: Assistance troubleshooting code error 
+• Date(s) in which generative AI was used: 01 August 2025
+• A link to the actual generative AI chat, and screenshots of the chat: https://chatgpt.com/share/690a21e9-ac74-8010-8ee9-c3ad922d864e  
+
+
+<img width="939" height="461" alt="image" src="https://github.com/user-attachments/assets/4232fc38-d24d-4e93-94b0-e35608f9be4a" />
+<img width="939" height="472" alt="image" src="https://github.com/user-attachments/assets/7781fa82-f504-467e-81aa-60085d5bfe74" />
+<img width="938" height="466" alt="image" src="https://github.com/user-attachments/assets/88d2e89b-ef29-454f-8497-96df0930f39a" />
+<img width="938" height="365" alt="image" src="https://github.com/user-attachments/assets/48f1d519-94d1-4e05-85bf-2c3ceadf5ac8" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+• Title: Disclosure of AI Usage in my Assessment. 
+• Section(s) within the assessment in which generative AI was used: Git commands
+• Name of AI tool(s) used: ChatGPT
+• Purpose/intention behind use: Assistance troubleshooting Git terminal fetch error. 
+• Date(s) in which generative AI was used: 04 October 2025
+• A link to the actual generative AI chat, and screenshots of the chat: https://chatgpt.com/share/690a2202-bf38-8010-882f-9076fba4523f 
+
+<img width="940" height="462" alt="image" src="https://github.com/user-attachments/assets/f3740a71-05b2-4c2c-a475-df257104a338" />
+<img width="940" height="467" alt="image" src="https://github.com/user-attachments/assets/b94d5d07-faf8-4437-95d9-65bc441a2b07" />
+<img width="940" height="402" alt="image" src="https://github.com/user-attachments/assets/91b59240-b983-4aad-826f-77ac371e9293" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+• Title: Disclosure of AI Usage in my Assessment. 
+• Section(s) within the assessment in which generative AI was used: Gyroscope code
+• Name of AI tool(s) used: ChatGPT
+• Purpose/intention behind use: Questioning if gyroscope code will work with application
+• Date(s) in which generative AI was used: 11 October 2025
+• A link to the actual generative AI chat, and screenshots of the chat: https://chatgpt.com/share/690a2225-bc70-8010-a11c-998a1fdaca1f 
+
+<img width="939" height="466" alt="image" src="https://github.com/user-attachments/assets/e930e0c5-fd0b-4331-998c-5897527de523" />
+<img width="939" height="463" alt="image" src="https://github.com/user-attachments/assets/53e77af9-df2b-4734-9ee8-14f9d610c554" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ---
 
